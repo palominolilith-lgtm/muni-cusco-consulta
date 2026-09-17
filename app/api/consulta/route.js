@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRecords } from "../../../../../lib/store";
-
+import { getRecords } from "../../../lib/store";
 export async function GET(req) {
   const q = new URL(req.url).searchParams.get("q")?.trim().toLowerCase();
   if (!q) return NextResponse.json({ok:false,message:"Ingresa un término de consulta."},{status:400});
