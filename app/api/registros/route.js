@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRecords, addRecord } from "../../../../lib/store";
+import { getRecords, addRecord } from "../../../lib/store";
 
 export async function GET() {
   return NextResponse.json(getRecords());
