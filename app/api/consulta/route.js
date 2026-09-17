@@ -1,26 +1,20 @@
 import { NextResponse } from "next/server";
-
 import { getRecords } from "../../../lib/store";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req) {
   try {
-    const q = new URL(req.url).searchParams
-      .get("q")
-      ?.trim()
-      .toLowerCase();
+    const q = new URL(req.url).searchParams.get("q")?.trim().toLowerCase();
 
     if (!q) {
       return NextResponse.json(
-        {
-          ok: false,
-          message: "Ingresa un término de consulta."
-        },
+        { ok: false, message: "Ingresa un término de consulta." },
         { status: 400 }
       );
     }
 
     const records = await getRecords();
-
     const item = records.find(
       (x) => x.codigo.toLowerCase() === q
     );
