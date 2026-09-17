@@ -3,9 +3,32 @@ import {
   updateRecord,
   deleteRecord
 } from "../../../../lib/store";
+import { verifySession } from "../../../../lib/auth";
+
+async function requireAdmin(req) {
+  const token = req.cookies.get("admin_session")?.value;
+
+  if (!token) {
+    return false;
+  }
+
+  return await verifySession(token);
+}
 
 export async function PUT(req, { params }) {
   try {
+    const authorized = await requireAdmin(req);
+
+    if (!authorized) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "No autorizado."
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
 
     const registro = await updateRecord(params.id, body);
@@ -39,6 +62,18 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
+    const authorized = await requireAdmin(req);
+
+    if (!authorized) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "No autorizado."
+        },
+        { status: 401 }
+      );
+    }
+
     const deleted = await deleteRecord(params.id);
 
     if (!deleted) {
