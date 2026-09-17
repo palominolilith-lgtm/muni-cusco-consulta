@@ -15,6 +15,7 @@ export default function Admin() {
   const [form, setForm] = useState(empty);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
 
   async function load() {
     try {
@@ -106,6 +107,30 @@ export default function Admin() {
     }
   }
 
+  async function logout() {
+    if (loggingOut) return;
+
+    try {
+      setLoggingOut(true);
+      setError("");
+
+      const r = await fetch("/api/auth/logout", {
+        method: "POST",
+        cache: "no-store"
+      });
+
+      if (!r.ok) {
+        throw new Error("No se pudo cerrar la sesión.");
+      }
+
+      window.location.replace("/admin/login");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "No se pudo cerrar la sesión.");
+      setLoggingOut(false);
+    }
+  }
+
   function edit(x) {
     setEditing(x.id);
 
@@ -147,6 +172,19 @@ export default function Admin() {
           <a href="/">Inicio</a>
           <a href="/consulta">Consulta</a>
           <a href="/admin">Administración</a>
+
+          <button
+            type="button"
+            className="link danger"
+            onClick={logout}
+            disabled={loggingOut}
+            style={{
+              marginLeft: 12,
+              cursor: loggingOut ? "wait" : "pointer"
+            }}
+          >
+            {loggingOut ? "Cerrando..." : "Cerrar sesión"}
+          </button>
         </nav>
       </header>
 
