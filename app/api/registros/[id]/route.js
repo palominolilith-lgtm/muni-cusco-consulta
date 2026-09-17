@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateRecord, deleteRecord } from "../../../../../lib/store";
+import { updateRecord, deleteRecord } from "../../../../lib/store";
 
 export async function PUT(req,{params}) {
   const body = await req.json();
