@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
+import { neon } from "@neondatabase/serverless";
 import { getRecordByCodigo } from "../../../lib/store";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,8 @@ const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
 });
+
+const sql = neon(process.env.DATABASE_URL);
 
 const consultaRateLimit = new Ratelimit({
   redis,
@@ -29,6 +32,70 @@ function getClientIp(request) {
     request.headers.get("cf-connecting-ip") ||
     "unknown"
   );
+}
+
+async function getRecordByTipo(tipo, valor) {
+  if (tipo === "codigo") {
+    return getRecordByCodigo(valor);
+  }
+
+  let rows = [];
+
+  if (tipo === "dni") {
+    rows = await sql`
+      SELECT
+        id::text AS id,
+        codigo,
+        nombre,
+        tipo,
+        estado,
+        fecha,
+        dni,
+        ce,
+        codigo_licencia
+      FROM registros
+      WHERE LOWER(TRIM(dni)) = LOWER(TRIM(${valor}))
+      LIMIT 1
+    `;
+  }
+
+  if (tipo === "ce") {
+    rows = await sql`
+      SELECT
+        id::text AS id,
+        codigo,
+        nombre,
+        tipo,
+        estado,
+        fecha,
+        dni,
+        ce,
+        codigo_licencia
+      FROM registros
+      WHERE LOWER(TRIM(ce)) = LOWER(TRIM(${valor}))
+      LIMIT 1
+    `;
+  }
+
+  if (tipo === "licencia") {
+    rows = await sql`
+      SELECT
+        id::text AS id,
+        codigo,
+        nombre,
+        tipo,
+        estado,
+        fecha,
+        dni,
+        ce,
+        codigo_licencia
+      FROM registros
+      WHERE LOWER(TRIM(codigo_licencia)) = LOWER(TRIM(${valor}))
+      LIMIT 1
+    `;
+  }
+
+  return rows[0] || null;
 }
 
 export async function GET(req) {
@@ -59,13 +126,16 @@ export async function GET(req) {
       );
     }
 
-    const q = new URL(req.url).searchParams.get("q")?.trim();
+    const searchParams = new URL(req.url).searchParams;
+
+    const q = searchParams.get("q")?.trim();
+    const tipo = searchParams.get("tipo")?.trim().toLowerCase();
 
     if (!q) {
       return NextResponse.json(
         {
           ok: false,
-          message: "Ingresa un término de consulta.",
+          message: "Ingresa el dato que deseas consultar.",
         },
         {
           status: 400,
@@ -80,7 +150,7 @@ export async function GET(req) {
       return NextResponse.json(
         {
           ok: false,
-          message: "Término de consulta no válido.",
+          message: "El dato ingresado no es válido.",
         },
         {
           status: 400,
@@ -91,13 +161,44 @@ export async function GET(req) {
       );
     }
 
-    const item = await getRecordByCodigo(q);
+    const tiposPermitidos = [
+      "codigo",
+      "dni",
+      "ce",
+      "licencia",
+    ];
 
-    if (!item) {
+    const tipoConsulta = tipo || "codigo";
+
+    if (!tiposPermitidos.includes(tipoConsulta)) {
       return NextResponse.json(
         {
           ok: false,
-          message: "No se encontró un registro con ese código.",
+          message: "Tipo de consulta no válido.",
+        },
+        {
+          status: 400,
+          headers: {
+            "Cache-Control": "no-store",
+          },
+        }
+      );
+    }
+
+    const item = await getRecordByTipo(tipoConsulta, q);
+
+    if (!item) {
+      const mensajes = {
+        codigo: "No se encontró un registro con ese código.",
+        dni: "No se encontró un registro asociado a ese DNI.",
+        ce: "No se encontró un registro asociado a ese carné de extranjería.",
+        licencia: "No se encontró un registro con ese código de licencia.",
+      };
+
+      return NextResponse.json(
+        {
+          ok: false,
+          message: mensajes[tipoConsulta],
         },
         {
           status: 404,
@@ -111,6 +212,7 @@ export async function GET(req) {
     return NextResponse.json(
       {
         ok: true,
+        tipoConsulta,
         registro: item,
       },
       {
