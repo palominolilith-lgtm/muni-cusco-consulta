@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 
 const empty = {
   codigo: "",
-  nombre: "",
-  dni: "",
-  ce: "",
+  apellidos: "",
+  nombres: "",
+  tipo_documento: "DNI",
+  numero_documento: "",
   codigo_licencia: "",
+  clase_categoria: "",
+  fecha_expedicion: "",
+  fecha_vencimiento: "",
+  fecha_revalidacion: "",
   tipo: "Licencia",
   estado: "Activo",
   fecha: ""
@@ -46,7 +51,6 @@ export default function Admin() {
       setError(
         err.message || "Error al cargar los registros."
       );
-      setItems([]);
     }
   }
 
@@ -54,11 +58,29 @@ export default function Admin() {
     load();
   }, []);
 
+  function updateField(field, value) {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value
+    }));
+  }
+
   async function save(e) {
     e.preventDefault();
 
     try {
       setError("");
+
+      const nombreCompleto =
+        `${form.apellidos} ${form.nombres}`.trim();
+
+      const nombreSistema =
+        nombreCompleto || "SIN NOMBRE";
+
+      const payload = {
+        ...form,
+        nombre: nombreSistema
+      };
 
       const method = editing ? "PUT" : "POST";
 
@@ -71,7 +93,7 @@ export default function Admin() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
 
       const data = await r.json();
@@ -88,6 +110,7 @@ export default function Admin() {
       await load();
     } catch (err) {
       console.error(err);
+
       setError(
         err.message || "Error al guardar."
       );
@@ -120,10 +143,61 @@ export default function Admin() {
       await load();
     } catch (err) {
       console.error(err);
+
       setError(
         err.message || "Error al eliminar."
       );
     }
+  }
+
+  function edit(x) {
+    setEditing(x.id);
+
+    setForm({
+      codigo: x.codigo || "",
+      apellidos: x.apellidos || "",
+      nombres: x.nombres || "",
+      tipo_documento:
+        x.tipo_documento ||
+        (x.dni ? "DNI" : x.ce ? "CE" : "DNI"),
+      numero_documento:
+        x.numero_documento ||
+        x.dni ||
+        x.ce ||
+        "",
+      codigo_licencia:
+        x.codigo_licencia || "",
+      clase_categoria:
+        x.clase_categoria || "",
+      fecha_expedicion:
+        x.fecha_expedicion
+          ? String(x.fecha_expedicion).slice(0, 10)
+          : "",
+      fecha_vencimiento:
+        x.fecha_vencimiento
+          ? String(x.fecha_vencimiento).slice(0, 10)
+          : "",
+      fecha_revalidacion:
+        x.fecha_revalidacion
+          ? String(x.fecha_revalidacion).slice(0, 10)
+          : "",
+      tipo: x.tipo || "Licencia",
+      estado: x.estado || "Activo",
+      fecha: x.fecha
+        ? String(x.fecha).slice(0, 10)
+        : ""
+    });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setForm(empty);
+    setError("");
   }
 
   async function logout() {
@@ -152,48 +226,23 @@ export default function Admin() {
       );
     } catch (err) {
       console.error(err);
+
       setError(
         err.message ||
           "No se pudo cerrar la sesión."
       );
+
       setLoggingOut(false);
     }
-  }
-
-  function edit(x) {
-    setEditing(x.id);
-
-    setForm({
-      codigo: x.codigo || "",
-      nombre: x.nombre || "",
-      dni: x.dni || "",
-      ce: x.ce || "",
-      codigo_licencia:
-        x.codigo_licencia || "",
-      tipo: x.tipo || "Licencia",
-      estado: x.estado || "Activo",
-      fecha: x.fecha
-        ? String(x.fecha).slice(0, 10)
-        : ""
-    });
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-  }
-
-  function cancelEdit() {
-    setEditing(null);
-    setForm(empty);
-    setError("");
   }
 
   return (
     <main>
       <header className="topbar">
         <div className="brand">
-          <div className="seal">MC</div>
+          <div className="seal">
+            MC
+          </div>
 
           <div>
             <strong>
@@ -207,8 +256,13 @@ export default function Admin() {
         </div>
 
         <nav>
-          <a href="/">Inicio</a>
-          <a href="/consulta">Consulta</a>
+          <a href="/">
+            Inicio
+          </a>
+
+          <a href="/consulta">
+            Consulta
+          </a>
 
           <button
             type="button"
@@ -239,9 +293,8 @@ export default function Admin() {
         </h1>
 
         <p className="muted">
-          Gestión de registros y datos de
-          consulta almacenados en la base
-          de datos.
+          Gestión de licencias y registros
+          disponibles para consulta.
         </p>
 
         {error && (
@@ -263,100 +316,174 @@ export default function Admin() {
         >
           <input
             required
-            placeholder="Código de registro"
+            placeholder="Código de registro / ficha"
             value={form.codigo}
             onChange={(e) =>
-              setForm({
-                ...form,
-                codigo: e.target.value
-              })
+              updateField(
+                "codigo",
+                e.target.value
+              )
             }
           />
 
           <input
-            required
-            placeholder="Nombre completo"
-            value={form.nombre}
+            placeholder="Apellidos"
+            value={form.apellidos}
             onChange={(e) =>
-              setForm({
-                ...form,
-                nombre: e.target.value
-              })
+              updateField(
+                "apellidos",
+                e.target.value
+              )
             }
           />
 
           <input
-            placeholder="DNI"
-            value={form.dni}
+            placeholder="Nombres"
+            value={form.nombres}
             onChange={(e) =>
-              setForm({
-                ...form,
-                dni: e.target.value
-              })
-            }
-          />
-
-          <input
-            placeholder="Carné de extranjería"
-            value={form.ce}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                ce: e.target.value
-              })
-            }
-          />
-
-          <input
-            placeholder="Código de licencia"
-            value={form.codigo_licencia}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                codigo_licencia:
-                  e.target.value
-              })
+              updateField(
+                "nombres",
+                e.target.value
+              )
             }
           />
 
           <select
-            value={form.tipo}
+            value={form.tipo_documento}
             onChange={(e) =>
-              setForm({
-                ...form,
-                tipo: e.target.value
-              })
+              updateField(
+                "tipo_documento",
+                e.target.value
+              )
             }
           >
-            <option>Licencia</option>
-            <option>Permiso</option>
-            <option>Registro</option>
+            <option value="DNI">
+              DNI
+            </option>
+
+            <option value="CE">
+              CARNÉ DE EXTRANJERÍA
+            </option>
+          </select>
+
+          <input
+            placeholder="Número de documento"
+            value={form.numero_documento}
+            onChange={(e) =>
+              updateField(
+                "numero_documento",
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            placeholder="Número de licencia"
+            value={form.codigo_licencia}
+            onChange={(e) =>
+              updateField(
+                "codigo_licencia",
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            placeholder="Clase / Categoría"
+            value={form.clase_categoria}
+            onChange={(e) =>
+              updateField(
+                "clase_categoria",
+                e.target.value
+              )
+            }
+          />
+
+          <label>
+            Fecha de expedición
+            <input
+              type="date"
+              value={form.fecha_expedicion}
+              onChange={(e) =>
+                updateField(
+                  "fecha_expedicion",
+                  e.target.value
+                )
+              }
+            />
+          </label>
+
+          <label>
+            Fecha de vencimiento
+            <input
+              type="date"
+              value={form.fecha_vencimiento}
+              onChange={(e) =>
+                updateField(
+                  "fecha_vencimiento",
+                  e.target.value
+                )
+              }
+            />
+          </label>
+
+          <label>
+            Fecha de revalidación
+            <input
+              type="date"
+              value={form.fecha_revalidacion}
+              onChange={(e) =>
+                updateField(
+                  "fecha_revalidacion",
+                  e.target.value
+                )
+              }
+            />
+          </label>
+
+          <select
+            value={form.tipo}
+            onChange={(e) =>
+              updateField(
+                "tipo",
+                e.target.value
+              )
+            }
+          >
+            <option value="Licencia">
+              Licencia
+            </option>
+
+            <option value="Permiso">
+              Permiso
+            </option>
+
+            <option value="Registro">
+              Registro
+            </option>
           </select>
 
           <select
             value={form.estado}
             onChange={(e) =>
-              setForm({
-                ...form,
-                estado: e.target.value
-              })
+              updateField(
+                "estado",
+                e.target.value
+              )
             }
           >
-            <option>Activo</option>
-            <option>Observado</option>
-            <option>Vencido</option>
-          </select>
+            <option value="Activo">
+              Activo
+            </option>
 
-          <input
-            type="date"
-            value={form.fecha}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                fecha: e.target.value
-              })
-            }
-          />
+            <option value="Observado">
+              Observado
+            </option>
+
+            <option value="Vencido">
+              Vencido
+            </option>
+          </select>
 
           <button
             className="btn primary"
@@ -382,14 +509,17 @@ export default function Admin() {
           <table>
             <thead>
               <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>DNI</th>
-                <th>CE</th>
+                <th>Ficha</th>
+                <th>Apellidos</th>
+                <th>Nombres</th>
+                <th>Documento</th>
+                <th>N.º Documento</th>
                 <th>Licencia</th>
-                <th>Tipo</th>
+                <th>Clase / Categoría</th>
+                <th>Expedición</th>
+                <th>Vencimiento</th>
+                <th>Revalidación</th>
                 <th>Estado</th>
-                <th>Fecha</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -397,7 +527,7 @@ export default function Admin() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan="9">
+                  <td colSpan="12">
                     No hay registros todavía.
                   </td>
                 </tr>
@@ -411,36 +541,58 @@ export default function Admin() {
                     </td>
 
                     <td>
-                      {x.nombre}
+                      {x.apellidos || "—"}
                     </td>
 
                     <td>
-                      {x.dni || "—"}
+                      {x.nombres || x.nombre || "—"}
                     </td>
 
                     <td>
-                      {x.ce || "—"}
+                      {x.tipo_documento || "—"}
                     </td>
 
                     <td>
-                      {x.codigo_licencia ||
+                      {x.numero_documento ||
+                        x.dni ||
+                        x.ce ||
                         "—"}
                     </td>
 
                     <td>
-                      {x.tipo}
+                      {x.codigo_licencia || "—"}
+                    </td>
+
+                    <td>
+                      {x.clase_categoria || "—"}
+                    </td>
+
+                    <td>
+                      {x.fecha_expedicion
+                        ? String(
+                            x.fecha_expedicion
+                          ).slice(0, 10)
+                        : "—"}
+                    </td>
+
+                    <td>
+                      {x.fecha_vencimiento
+                        ? String(
+                            x.fecha_vencimiento
+                          ).slice(0, 10)
+                        : "—"}
+                    </td>
+
+                    <td>
+                      {x.fecha_revalidacion
+                        ? String(
+                            x.fecha_revalidacion
+                          ).slice(0, 10)
+                        : "—"}
                     </td>
 
                     <td>
                       {x.estado}
-                    </td>
-
-                    <td>
-                      {x.fecha
-                        ? String(
-                            x.fecha
-                          ).slice(0, 10)
-                        : ""}
                     </td>
 
                     <td>
