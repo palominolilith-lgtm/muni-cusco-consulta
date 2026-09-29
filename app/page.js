@@ -27,6 +27,8 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showNotice, setShowNotice] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedProcedure, setSelectedProcedure] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -378,9 +380,11 @@ export default function Home() {
 
           {services.map(([icon, title, text]) => (
 
-            <article
+            <button
               key={title}
-              className="service-card"
+              type="button"
+              className="service-card service-card-button"
+              onClick={() => setSelectedService({ icon, title, text })}
             >
 
               <div className="service-icon">
@@ -399,7 +403,7 @@ export default function Home() {
                 →
               </span>
 
-            </article>
+            </button>
 
           ))}
 
@@ -482,9 +486,11 @@ export default function Home() {
 
           {procedures.map((item, index) => (
 
-            <div
+            <button
               key={item}
-              className="procedure-item"
+              type="button"
+              className="procedure-item procedure-button"
+              onClick={() => setSelectedProcedure(item)}
             >
 
               <span>
@@ -499,13 +505,139 @@ export default function Home() {
                 →
               </b>
 
-            </div>
+            </button>
 
           ))}
 
         </div>
 
       </section>
+
+      {/* =========================
+          MODAL DE SERVICIO
+      ========================== */}
+
+      {selectedService && (
+        <div
+          className="interactive-overlay"
+          onClick={() => setSelectedService(null)}
+        >
+
+          <div
+            className="interactive-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+
+            <button
+              type="button"
+              className="interactive-close"
+              onClick={() => setSelectedService(null)}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+
+            <div className="interactive-icon">
+              {selectedService.icon}
+            </div>
+
+            <span className="interactive-label">
+              SERVICIO DIGITAL
+            </span>
+
+            <h2>
+              {selectedService.title}
+            </h2>
+
+            <p>
+              {selectedService.text}
+            </p>
+
+            {selectedService.title === "Consultas en Línea" ? (
+
+              <Link
+                href="/consulta"
+                className="interactive-button"
+                onClick={() => setSelectedService(null)}
+              >
+                INGRESAR A CONSULTA
+              </Link>
+
+            ) : (
+
+              <button
+                type="button"
+                className="interactive-button"
+                onClick={() => setSelectedService(null)}
+              >
+                CONTINUAR
+              </button>
+
+            )}
+
+          </div>
+
+        </div>
+      )}
+
+
+      {/* =========================
+          MODAL DE TRÁMITE
+      ========================== */}
+
+      {selectedProcedure && (
+        <div
+          className="interactive-overlay"
+          onClick={() => setSelectedProcedure(null)}
+        >
+
+          <div
+            className="interactive-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+
+            <button
+              type="button"
+              className="interactive-close"
+              onClick={() => setSelectedProcedure(null)}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+
+            <div className="interactive-number">
+              {String(
+                procedures.indexOf(selectedProcedure) + 1
+              ).padStart(2, "0")}
+            </div>
+
+            <span className="interactive-label">
+              SERVICIOS MUNICIPALES
+            </span>
+
+            <h2>
+              {selectedProcedure}
+            </h2>
+
+            <p>
+              Información y orientación relacionada con este
+              servicio municipal. Selecciona esta opción para
+              consultar la información disponible en el portal.
+            </p>
+
+            <button
+              type="button"
+              className="interactive-button"
+              onClick={() => setSelectedProcedure(null)}
+            >
+              ENTENDIDO
+            </button>
+
+          </div>
+
+        </div>
+      )}
+
 
       {/* =========================
           LLAMADO FINAL
@@ -826,7 +958,7 @@ export default function Home() {
         .notice-modal h2 {
           text-align: center;
           color: #541217;
-          margin: 0 0 25px;
+                    margin: 0 0 25px;
           font-size: clamp(27px, 4vw, 42px);
         }
 
@@ -1206,10 +1338,24 @@ export default function Home() {
           transition: .25s ease;
         }
 
+        .service-card-button {
+          width: 100%;
+          display: block;
+          text-align: left;
+          font-family: inherit;
+          cursor: pointer;
+          color: inherit;
+        }
+
         .service-card:hover {
           transform: translateY(-7px);
           box-shadow: 0 20px 45px rgba(70,30,25,.1);
           border-color: #d7ae55;
+        }
+
+        .service-card-button:focus-visible {
+          outline: 3px solid #d3a847;
+          outline-offset: 3px;
         }
 
         .service-icon {
@@ -1292,7 +1438,7 @@ export default function Home() {
         }
 
         .consult-emblem strong {
-          display: block;
+                  display: block;
           margin-top: 10px;
           color: #e5c273;
           letter-spacing: 2px;
@@ -1342,6 +1488,147 @@ export default function Home() {
 
         .procedure-item b {
           color: #d5ad59;
+        }
+
+        /* INTERACTIVOS */
+
+        .interactive-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9997;
+          background: rgba(25, 8, 12, .72);
+          backdrop-filter: blur(5px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 25px;
+        }
+
+        .interactive-modal {
+          position: relative;
+          width: min(620px, 100%);
+          background: white;
+          border-radius: 18px;
+          padding: 45px 40px;
+          text-align: center;
+          box-shadow: 0 30px 100px rgba(0,0,0,.35);
+          border-top: 6px solid #a50c2d;
+          animation: interactiveIn .25s ease;
+        }
+
+        .interactive-close {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          width: 38px;
+          height: 38px;
+          border: 0;
+          border-radius: 50%;
+          background: #8f0928;
+          color: white;
+          font-size: 26px;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .interactive-close:hover {
+          background: #a50c2d;
+        }
+
+        .interactive-icon {
+          font-size: 55px;
+          margin-bottom: 15px;
+        }
+
+        .interactive-number {
+          width: 70px;
+          height: 70px;
+          margin: 0 auto 15px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f5ead0;
+          border: 2px solid #d3a847;
+          color: #8f0928;
+          font-size: 22px;
+          font-weight: 800;
+        }
+
+        .interactive-label {
+          display: block;
+          color: #a50c2d;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 3px;
+          margin-bottom: 10px;
+        }
+
+        .interactive-modal h2 {
+          margin: 0 0 18px;
+          color: #541217;
+          font-size: clamp(28px, 5vw, 42px);
+          line-height: 1.1;
+        }
+
+        .interactive-modal p {
+          margin: 0 auto;
+          max-width: 500px;
+          color: #655b56;
+          font-size: 16px;
+          line-height: 1.75;
+        }
+
+        .interactive-button {
+          display: inline-block;
+          margin-top: 28px;
+          padding: 14px 28px;
+          border: 0;
+          border-radius: 4px;
+          background: #8f0928;
+          color: white;
+          text-decoration: none;
+          font-family: inherit;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 1px;
+          cursor: pointer;
+        }
+
+        .interactive-button:hover {
+          background: #a50c2d;
+        }
+
+        @keyframes interactiveIn {
+          from {
+            opacity: 0;
+            transform: translateY(15px) scale(.97);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .procedure-button {
+          width: 100%;
+          border: 0;
+          border-bottom: 1px solid rgba(255,255,255,.15);
+          background: transparent;
+          color: white;
+          font-family: inherit;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .procedure-button:hover {
+          background: rgba(255,255,255,.05);
+        }
+
+        .procedure-button:focus-visible {
+          outline: 2px solid #d5ad59;
+          outline-offset: -2px;
         }
 
         /* FINAL */
@@ -1634,4 +1921,3 @@ export default function Home() {
 
     </main>
   );
-}
