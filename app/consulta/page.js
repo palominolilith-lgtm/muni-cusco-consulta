@@ -2,1484 +2,1059 @@
 
 import { useState } from "react";
 
-const QUERY_TYPES = {
+const tipos = [
+  {
+    id: "codigo",
+    titulo: "Código de registro",
+    descripcion: "Consulta por ficha"
+  },
+  {
+    id: "dni",
+    titulo: "DNI",
+    descripcion: "Consulta disponible"
+  },
+  {
+    id: "ce",
+    titulo: "CE / Carné de extranjería",
+    descripcion: "Consulta disponible"
+  },
+  {
+    id: "licencia",
+    titulo: "Licencia",
+    descripcion: "Consulta disponible"
+  }
+];
+
+const textos = {
   codigo: {
-    title: "Código de registro",
-    label: "Código de consulta",
+    label: "Código de registro / ficha",
     placeholder: "Ejemplo: 101010",
-    help: "Ingresa el código de registro proporcionado.",
-    aria: "Código de registro",
+    ayuda: "Ingresa el código de registro proporcionado."
   },
   dni: {
-    title: "DNI",
     label: "Número de DNI",
-    placeholder: "Ejemplo: 12345678",
-    help: "Ingresa el número de documento de identidad.",
-    aria: "Número de DNI",
+    placeholder: "Ejemplo: 40507828",
+    ayuda: "Ingresa el número de DNI."
   },
   ce: {
-    title: "CE / Carné de extranjería",
     label: "Número de carné de extranjería",
-    placeholder: "Ejemplo: CE123456",
-    help: "Ingresa el número de tu carné de extranjería.",
-    aria: "Carné de extranjería",
+    placeholder: "Ejemplo: 006310958",
+    ayuda: "Ingresa el número de tu carné de extranjería."
   },
   licencia: {
-    title: "Licencia",
-    label: "Código de licencia",
-    placeholder: "Ejemplo: LIC-001234",
-    help: "Ingresa el código de licencia registrado.",
-    aria: "Código de licencia",
-  },
+    label: "Número de licencia",
+    placeholder: "Ejemplo: Q-006310958",
+    ayuda: "Ingresa el número de licencia."
+  }
 };
 
-export default function Consulta() {
-  const [tipo, setTipo] = useState("codigo");
-  const [term, setTerm] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+function formatDate(value) {
+  if (!value) return "—";
 
-  const current = QUERY_TYPES[tipo];
+  const date = String(value).slice(0, 10);
 
-  function changeType(newType) {
-    setTipo(newType);
-    setTerm("");
-    setResult(null);
+  const parts = date.split("-");
+
+  if (parts.length !== 3) {
+    return date;
   }
 
-  async function search(e) {
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+export default function ConsultaPage() {
+  const [tipo, setTipo] = useState("codigo");
+  const [valor, setValor] = useState("");
+  const [registro, setRegistro] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function cambiarTipo(nuevoTipo) {
+    setTipo(nuevoTipo);
+    setValor("");
+    setRegistro(null);
+    setError("");
+  }
+
+  async function consultar(e) {
     e.preventDefault();
 
-    const value = term.trim();
+    const dato = valor.trim();
 
-    if (!value) {
-      setResult({
-        ok: false,
-        message: `Ingresa ${current.label.toLowerCase()} para realizar la consulta.`,
-      });
+    if (!dato) {
+      setError(
+        "Ingresa el dato que deseas consultar."
+      );
+      setRegistro(null);
       return;
     }
 
-    setLoading(true);
-    setResult(null);
-
     try {
-      const res = await fetch(
-        `/api/consulta?tipo=${encodeURIComponent(
-          tipo
-        )}&q=${encodeURIComponent(value)}`,
+      setLoading(true);
+      setError("");
+      setRegistro(null);
+
+      const params = new URLSearchParams({
+        tipo,
+        q: dato
+      });
+
+      const response = await fetch(
+        `/api/consulta?${params.toString()}`,
         {
-          cache: "no-store",
+          cache: "no-store"
         }
       );
 
-      const data = await res.json();
-      setResult(data);
-    } catch {
-      setResult({
-        ok: false,
-        message: "No fue posible realizar la consulta.",
-      });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.message ||
+            "No se encontró información."
+        );
+      }
+
+      setRegistro(data.registro);
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err.message ||
+          "No se pudo realizar la consulta."
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  const numeroDocumento =
+    registro?.numero_documento ||
+    registro?.dni ||
+    registro?.ce ||
+    "—";
+
+  const tipoDocumento =
+    registro?.tipo_documento ||
+    (registro?.dni
+      ? "DNI"
+      : registro?.ce
+      ? "CARNÉ DE EXTRANJERÍA"
+      : "—");
+
+  const apellidos =
+    registro?.apellidos ||
+    "—";
+
+  const nombres =
+    registro?.nombres ||
+    registro?.nombre ||
+    "—";
+
   return (
     <main className="consulta-page">
-      <header className="consulta-topbar">
-        <div className="consulta-brand">
-          <div className="consulta-seal">
-            <div className="seal-inner">MC</div>
-          </div>
-
-          <div className="brand-text">
-            <strong>MUNICIPALIDAD PROVINCIAL DEL CUSCO</strong>
-            <span>Portal de Consultas</span>
-          </div>
+      <section className="hero">
+        <div className="seal">
+          MC
         </div>
 
-        <nav className="consulta-nav">
-          <a href="/">Inicio</a>
-          <a href="/consulta" className="active">
-            Consulta
-          </a>
-        </nav>
-      </header>
+        <p className="institution">
+          MUNICIPALIDAD PROVINCIAL DEL CUSCO
+        </p>
 
-      <section className="consulta-hero">
-        <div className="hero-overlay" />
+        <h1>
+          Portal de Consultas
+        </h1>
 
-        <div className="hero-content">
-          <div className="institution-mark">
-            <div className="large-seal">
-              <span>MC</span>
-            </div>
-          </div>
-
-          <p className="hero-kicker">
-            MUNICIPALIDAD PROVINCIAL DEL CUSCO
-          </p>
-
-          <h1>Portal de Consultas</h1>
-
-          <p className="hero-description">
-            Plataforma de consulta de información y registros municipales.
-            Selecciona el tipo de consulta e ingresa el dato solicitado.
-          </p>
-        </div>
+        <p className="hero-text">
+          Plataforma de consulta de información
+          y registros municipales. Selecciona
+          el tipo de consulta e ingresa el dato
+          solicitado.
+        </p>
       </section>
 
-      <section className="consulta-container">
-        <div className="consulta-card">
-          <div className="card-header">
-            <div className="header-icon">⌕</div>
-
-            <div>
-              <p className="section-label">SERVICIO EN LÍNEA</p>
-              <h2>Consulta de registros</h2>
-            </div>
-          </div>
-
-          <p className="card-description">
-            Selecciona una modalidad de búsqueda para consultar la
-            información disponible en el sistema.
-          </p>
-
-          <div className="query-types">
-            <button
-              type="button"
-              className={`query-type ${
-                tipo === "codigo" ? "active" : ""
-              }`}
-              onClick={() => changeType("codigo")}
-            >
-              <div className="query-icon">▣</div>
-
-              <div>
-                <strong>Código de registro</strong>
-                <span>Consulta disponible</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`query-type ${
-                tipo === "dni" ? "active" : ""
-              }`}
-              onClick={() => changeType("dni")}
-            >
-              <div className="query-icon">▤</div>
-
-              <div>
-                <strong>DNI</strong>
-                <span>Consulta disponible</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`query-type ${
-                tipo === "ce" ? "active" : ""
-              }`}
-              onClick={() => changeType("ce")}
-            >
-              <div className="query-icon">▤</div>
-
-              <div>
-                <strong>CE / Carné de extranjería</strong>
-                <span>Consulta disponible</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`query-type ${
-                tipo === "licencia" ? "active" : ""
-              }`}
-              onClick={() => changeType("licencia")}
-            >
-              <div className="query-icon">▥</div>
-
-              <div>
-                <strong>Licencia</strong>
-                <span>Consulta disponible</span>
-              </div>
-            </button>
-          </div>
-
-          <form className="consulta-form" onSubmit={search}>
-            <label htmlFor="consulta">
-              {current.label}
-            </label>
-
-            <div className="input-row">
-              <div className="input-wrapper">
-                <span className="input-icon">⌕</span>
-
-                <input
-                  id="consulta"
-                  value={term}
-                  onChange={(e) => setTerm(e.target.value)}
-                  placeholder={current.placeholder}
-                  autoComplete="off"
-                  aria-label={current.aria}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="consulta-button"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <span className="spinner" />
-                    Consultando...
-                  </>
-                ) : (
-                  <>
-                    Consultar
-                    <span>→</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <p className="input-help">
-              {current.help}
-            </p>
-          </form>
-
-          {result && (
-  <div
-    className={`license-result ${
-      result.ok ? "license-success" : "license-error"
-    }`}
-  >
-    {result.ok ? (
-      <>
-        <div className="license-header">
-          <div className="license-brand">
-            <div className="license-seal">
-              MC
-            </div>
-
-            <div>
-              <span>CONSULTA DE LICENCIA</span>
-              <h3>Resultado de consulta</h3>
-            </div>
-          </div>
-
-          <div className="license-status">
-            <i />
-            {result.registro.estado || "—"}
-          </div>
-        </div>
-
-        <div className="license-title">
-          <span>INFORMACIÓN DEL TITULAR</span>
-          <strong>
-            {result.registro.nombre || "NO REGISTRADO"}
-          </strong>
-        </div>
-
-        <div className="license-grid">
-          <div>
-            <span>TIPO DE DOCUMENTO</span>
-            <strong>
-              {result.registro.dni
-                ? "DNI"
-                : result.registro.ce
-                ? "CARNÉ DE EXTRANJERÍA"
-                : "—"}
-            </strong>
+      <section className="main-card">
+        <div className="heading">
+          <div className="search-icon">
+            ⌕
           </div>
 
           <div>
-            <span>NÚMERO DE DOCUMENTO</span>
-            <strong>
-              {result.registro.dni ||
-                result.registro.ce ||
-                "—"}
-            </strong>
-          </div>
-
-          <div>
-            <span>TIPO DE REGISTRO</span>
-            <strong>
-              {result.registro.tipo || "—"}
-            </strong>
-          </div>
-
-          <div>
-            <span>CÓDIGO DE LICENCIA</span>
-            <strong>
-              {result.registro.codigo_licencia || "—"}
-            </strong>
-          </div>
-
-          <div>
-            <span>CÓDIGO DE REGISTRO</span>
-            <strong>
-              {result.registro.codigo || "—"}
-            </strong>
-          </div>
-
-          <div>
-            <span>FECHA DE REGISTRO</span>
-            <strong>
-              {result.registro.fecha
-                ? String(result.registro.fecha).slice(0, 10)
-                : "—"}
-            </strong>
-          </div>
-        </div>
-
-        <div className="license-footer">
-          <div>
-            <span>ESTADO DEL REGISTRO</span>
-            <strong>
-              <i />
-              {result.registro.estado || "—"}
-            </strong>
-          </div>
-
-          <div className="verified">
-            ✓ Registro consultado
-          </div>
-        </div>
-      </>
-    ) : (
-      <div className="license-error-content">
-        <div className="error-icon">!</div>
-
-        <div>
-          <strong>No se encontró el registro</strong>
-          <p>{result.message}</p>
-        </div>
-      </div>
-    )}
-  </div>
-)}
-
-          <div className="information-box">
-            <div className="information-icon">i</div>
-
-            <div>
-              <strong>Información al ciudadano</strong>
-
-              <p>
-                Verifica los datos ingresados antes de realizar
-                la consulta. La información mostrada corresponde
-                a los registros disponibles en el sistema.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="consulta-services">
-        <div className="services-container">
-          <div className="services-heading">
-            <p>SERVICIOS DIGITALES</p>
+            <span>
+              SERVICIO EN LÍNEA
+            </span>
 
             <h2>
-              Realiza tus consultas de manera sencilla
+              Consulta de registros
             </h2>
+          </div>
+        </div>
 
-            <span>
-              Accede a los servicios disponibles desde cualquier
-              dispositivo.
-            </span>
+        <p className="intro">
+          Selecciona una modalidad de búsqueda
+          para consultar la información disponible
+          en el sistema.
+        </p>
+
+        <div className="type-grid">
+          {tipos.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`type-card ${
+                tipo === item.id
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                cambiarTipo(item.id)
+              }
+            >
+              <div className="type-icon">
+                {item.id === "dni"
+                  ? "▤"
+                  : item.id === "ce"
+                  ? "▤"
+                  : item.id === "licencia"
+                  ? "▥"
+                  : "▣"}
+              </div>
+
+              <strong>
+                {item.titulo}
+              </strong>
+
+              <small>
+                {item.descripcion}
+              </small>
+            </button>
+          ))}
+        </div>
+
+        <form
+          className="search-box"
+          onSubmit={consultar}
+        >
+          <label>
+            {textos[tipo].label}
+          </label>
+
+          <div className="search-row">
+            <div className="input-wrap">
+              <span>
+                ⌕
+              </span>
+
+              <input
+                value={valor}
+                onChange={(e) =>
+                  setValor(e.target.value)
+                }
+                placeholder={
+                  textos[tipo].placeholder
+                }
+                autoComplete="off"
+              />
+            </div>
+
+            <button
+              className="search-button"
+              type="submit"
+              disabled={loading}
+            >
+              {loading
+                ? "Consultando..."
+                : "Consultar  →"}
+            </button>
           </div>
 
-          <div className="service-cards">
-            <div className="service-card">
-              <div className="service-card-icon">⌕</div>
+          <small>
+            {textos[tipo].ayuda}
+          </small>
+        </form>
 
-              <h3>Consulta en línea</h3>
-
-              <p>
-                Realiza consultas de manera rápida desde cualquier
-                dispositivo.
-              </p>
+        {error && (
+          <div className="error-box">
+            <div className="error-icon">
+              !
             </div>
 
-            <div className="service-card">
-              <div className="service-card-icon">✓</div>
-
-              <h3>Información disponible</h3>
-
-              <p>
-                Consulta los registros disponibles en la plataforma.
-              </p>
-            </div>
-
-            <div className="service-card">
-              <div className="service-card-icon">◷</div>
-
-              <h3>Atención digital</h3>
+            <div>
+              <strong>
+                No se encontró información
+              </strong>
 
               <p>
-                Servicio disponible desde computadoras, tablets
-                y celulares.
+                {error}
               </p>
             </div>
+          </div>
+        )}
+
+        {registro && (
+          <section className="license-result">
+            <div className="result-header">
+              <div className="result-brand">
+                <div className="mini-seal">
+                  MC
+                </div>
+
+                <div>
+                  <span>
+                    CONSULTA DE LICENCIA
+                  </span>
+
+                  <h3>
+                    Resultado de consulta
+                  </h3>
+                </div>
+              </div>
+
+              <div className="status">
+                <i />
+                {registro.estado ||
+                  "Activo"}
+              </div>
+            </div>
+
+            <div className="holder">
+              <span>
+                INFORMACIÓN DEL TITULAR
+              </span>
+
+              <h4>
+                {apellidos !== "—"
+                  ? apellidos
+                  : nombres}
+              </h4>
+
+              {apellidos !== "—" &&
+                registro.nombres && (
+                  <p>
+                    {registro.nombres}
+                  </p>
+                )}
+            </div>
+
+            <div className="data-grid">
+              <div className="data-item">
+                <span>
+                  TIPO DE DOCUMENTO
+                </span>
+
+                <strong>
+                  {tipoDocumento}
+                </strong>
+              </div>
+
+              <div className="data-item">
+                <span>
+                  NÚMERO DE DOCUMENTO
+                </span>
+
+                <strong>
+                  {numeroDocumento}
+                </strong>
+              </div>
+
+              <div className="data-item">
+                <span>
+                  TIPO DE REGISTRO
+                </span>
+
+                <strong>
+                  {registro.tipo ||
+                    "LICENCIA"}
+                </strong>
+              </div>
+
+              <div className="data-item">
+                <span>
+                  NÚMERO DE LICENCIA
+                </span>
+
+                <strong>
+                  {registro.codigo_licencia ||
+                    "—"}
+                </strong>
+              </div>
+
+              <div className="data-item">
+                <span>
+                  CLASE / CATEGORÍA
+                </span>
+
+                <strong>
+                  {registro.clase_categoria ||
+                    "—"}
+                </strong>
+              </div>
+
+              <div className="data-item">
+                <span>
+                  FICHA / CÓDIGO DE REGISTRO
+                </span>
+
+                <strong>
+                  {registro.codigo ||
+                    "—"}
+                </strong>
+              </div>
+
+              <div className="data-item">
+                <span>
+                  FECHA DE EXPEDICIÓN
+                </span>
+
+                <strong>
+                  {formatDate(
+                    registro.fecha_expedicion
+                  )}
+                </strong>
+              </div>
+
+              <div className="data-item">
+                <span>
+                  FECHA DE VENCIMIENTO
+                </span>
+
+                <strong>
+                  {formatDate(
+                    registro.fecha_vencimiento
+                  )}
+                </strong>
+              </div>
+
+              <div className="data-item">
+                <span>
+                  FECHA DE REVALIDACIÓN
+                </span>
+
+                <strong>
+                  {formatDate(
+                    registro.fecha_revalidacion
+                  )}
+                </strong>
+              </div>
+            </div>
+
+            <div className="result-footer">
+              <div>
+                <span>
+                  ESTADO DE LA LICENCIA
+                </span>
+
+                <strong>
+                  <i />
+                  {registro.estado ||
+                    "Activo"}
+                </strong>
+              </div>
+
+              <div className="consulted">
+                ✓ Registro consultado
+              </div>
+            </div>
+          </section>
+        )}
+
+        <div className="info-box">
+          <div className="info-icon">
+            i
+          </div>
+
+          <div>
+            <strong>
+              Información al ciudadano
+            </strong>
+
+            <p>
+              Verifica los datos ingresados
+              antes de realizar la consulta.
+              La información mostrada corresponde
+              a los registros disponibles en el
+              sistema.
+            </p>
           </div>
         </div>
       </section>
 
-      <footer className="consulta-footer">
-        <div className="footer-inner">
-          <div>
-            <strong>
-              MUNICIPALIDAD PROVINCIAL DEL CUSCO
-            </strong>
+      <section className="bottom-section">
+        <span>
+          SERVICIOS DIGITALES
+        </span>
 
-            <span>Portal de Consultas</span>
+        <h2>
+          Realiza tus consultas de manera sencilla
+        </h2>
+
+        <p>
+          Accede a los servicios disponibles
+          desde cualquier dispositivo.
+        </p>
+
+        <div className="bottom-cards">
+          <div>
+            <b>⌕</b>
+            <strong>
+              Consulta en línea
+            </strong>
+            <p>
+              Realiza consultas rápidamente.
+            </p>
           </div>
 
-          <p>
-            © {new Date().getFullYear()} Portal de Consultas
-          </p>
+          <div>
+            <b>✓</b>
+            <strong>
+              Información disponible
+            </strong>
+            <p>
+              Consulta los registros disponibles.
+            </p>
+          </div>
+
+          <div>
+            <b>◷</b>
+            <strong>
+              Atención digital
+            </strong>
+            <p>
+              Servicio disponible desde cualquier
+              dispositivo.
+            </p>
+          </div>
         </div>
-      </footer>
+      </section>
 
       <style jsx>{`
         .consulta-page {
           min-height: 100vh;
           background: #f5f2ee;
-          color: #33231f;
-          font-family: Arial, Helvetica, sans-serif;
+          color: #351717;
         }
 
-        .consulta-topbar {
-          height: 82px;
-          background: #fff;
-          border-bottom: 1px solid #e8dfda;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 7%;
-          position: relative;
-          z-index: 10;
-        }
-
-        .consulta-brand {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-        }
-
-        .consulta-seal {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          background: linear-gradient(145deg, #8b171d, #5d0d12);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 5px 16px rgba(93, 13, 18, 0.2);
-        }
-
-        .seal-inner {
-          width: 38px;
-          height: 38px;
-          border: 2px solid #d7ae55;
-          border-radius: 50%;
-          color: #f4d68a;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          font-weight: 800;
-          letter-spacing: 1px;
-        }
-
-        .brand-text {
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-        }
-
-        .brand-text strong {
-          color: #5e1116;
-          font-size: 14px;
-          letter-spacing: 0.4px;
-        }
-
-        .brand-text span {
-          color: #92766e;
-          font-size: 12px;
-        }
-
-        .consulta-nav {
-          display: flex;
-          gap: 34px;
-        }
-
-        .consulta-nav a {
-          text-decoration: none;
-          color: #654a43;
-          font-size: 14px;
-          font-weight: 700;
-          position: relative;
-          padding: 30px 0;
-        }
-
-        .consulta-nav a.active,
-        .consulta-nav a:hover {
-          color: #7c1219;
-        }
-
-        .consulta-nav a.active::after {
-          content: "";
-          position: absolute;
-          height: 3px;
-          left: 0;
-          right: 0;
-          bottom: 18px;
-          border-radius: 3px;
-          background: #c79c43;
-        }
-
-        .consulta-hero {
-          min-height: 330px;
-          position: relative;
-          overflow: hidden;
+        .hero {
           background:
             radial-gradient(
-              circle at 80% 30%,
-              rgba(211, 170, 83, 0.22),
-              transparent 28%
+              circle at 50% 0%,
+              rgba(255, 210, 100, 0.1),
+              transparent 35%
             ),
             linear-gradient(
-              120deg,
-              #4d0a10,
-              #78151b 48%,
-              #5a0d12
+              135deg,
+              #741016,
+              #4f080d
             );
+          color: white;
+          text-align: center;
+          padding: 34px 20px 90px;
+        }
+
+        .seal,
+        .mini-seal {
           display: flex;
           align-items: center;
           justify-content: center;
-          text-align: center;
+          border: 2px solid #d9ad4a;
+          color: #e6bd61;
+          border-radius: 50%;
+          font-weight: 900;
         }
 
-        .hero-overlay {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.035),
-            transparent
-          );
-          animation: shine 5s ease-in-out infinite;
-        }
-
-        .hero-content {
-          position: relative;
-          z-index: 2;
-          max-width: 760px;
-          padding: 55px 24px;
-          animation: heroIn 0.9s ease both;
-        }
-
-        .institution-mark {
-          margin-bottom: 18px;
-        }
-
-        .large-seal {
+        .seal {
           width: 82px;
           height: 82px;
-          margin: auto;
-          border-radius: 50%;
-          border: 2px solid rgba(226, 188, 102, 0.8);
+          margin: 0 auto 15px;
+          font-size: 22px;
           box-shadow:
-            0 0 0 7px rgba(255, 255, 255, 0.04),
-            0 0 35px rgba(220, 177, 81, 0.18);
-          display: flex;
-          align-items: center;
-          justify-content: center;
+            0 0 0 7px rgba(217, 173, 74, 0.08);
         }
 
-        .large-seal span {
-          color: #f0ce79;
-          font-weight: 900;
-          font-size: 23px;
-          letter-spacing: 2px;
-        }
-
-        .hero-kicker {
-          color: #e3c273;
+        .institution {
+          color: #e5ba58;
           font-size: 12px;
           font-weight: 800;
-          letter-spacing: 2px;
+          letter-spacing: 4px;
           margin: 0 0 12px;
         }
 
-        .hero-content h1 {
+        .hero h1 {
           margin: 0;
-          color: #fff;
-          font-family: Georgia, "Times New Roman", serif;
-          font-size: clamp(38px, 5vw, 62px);
-          font-weight: 600;
+          font-family: Georgia, serif;
+          font-size: clamp(42px, 6vw, 68px);
+          line-height: 1;
         }
 
-        .hero-description {
-          max-width: 650px;
-          margin: 18px auto 0;
-          color: rgba(255, 255, 255, 0.82);
-          font-size: 16px;
+        .hero-text {
+          max-width: 720px;
+          margin: 22px auto 0;
           line-height: 1.7;
+          font-size: 15px;
+          opacity: 0.9;
         }
 
-        .consulta-container {
-          max-width: 1050px;
-          margin: -58px auto 0;
-          padding: 0 20px 70px;
+        .main-card {
+          width: min(920px, calc(100% - 28px));
+          margin: -48px auto 0;
           position: relative;
-          z-index: 5;
-        }
-
-        .consulta-card {
-          background: #fff;
+          background: white;
           border-radius: 18px;
-          padding: 38px;
-          box-shadow: 0 22px 60px rgba(56, 31, 25, 0.13);
-          border: 1px solid #eee4df;
+          padding: 34px;
+          box-shadow:
+            0 25px 60px rgba(58, 30, 20, 0.12);
         }
 
-        .card-header {
+        .heading {
           display: flex;
           align-items: center;
           gap: 16px;
         }
 
-        .header-icon {
+        .search-icon {
           width: 54px;
           height: 54px;
+          display: grid;
+          place-items: center;
           border-radius: 14px;
-          background: #f7eee9;
-          color: #76151b;
+          background: #f8eeea;
+          color: #870f17;
+          font-size: 27px;
+        }
+
+        .heading span,
+        .holder > span,
+        .result-brand span,
+        .bottom-section > span {
+          color: #b27b19;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 3px;
+        }
+
+        .heading h2 {
+          margin: 3px 0 0;
+          font-family: Georgia, serif;
+          font-size: 30px;
+        }
+
+        .intro {
+          color: #756b66;
+          margin: 22px 0;
+          font-size: 14px;
+        }
+
+        .type-grid {
+          display: grid;
+          grid-template-columns:
+            repeat(4, 1fr);
+          gap: 10px;
+        }
+
+        .type-card {
+          border: 1px solid #eadfd9;
+          background: #fffdfc;
+          border-radius: 12px;
+          padding: 17px 14px;
+          text-align: left;
+          cursor: pointer;
+          transition: 0.2s;
+          color: #351717;
+        }
+
+        .type-card:hover {
+          transform: translateY(-2px);
+          border-color: #b72029;
+        }
+
+        .type-card.active {
+          border-color: #b72029;
+          background: #fff8f5;
+          box-shadow:
+            inset 0 0 0 1px #b72029;
+        }
+
+        .type-icon {
+          color: #900f17;
+          font-size: 18px;
+          margin-bottom: 11px;
+        }
+
+        .type-card strong {
+          display: block;
+          font-size: 13px;
+        }
+
+        .type-card small {
+          display: block;
+          color: #9a8c86;
+          font-size: 10px;
+          margin-top: 5px;
+        }
+
+        .search-box {
+          background: #faf7f4;
+          border: 1px solid #eadfd9;
+          border-radius: 14px;
+          padding: 20px;
+          margin-top: 22px;
+        }
+
+        .search-box label {
+          display: block;
+          font-weight: 800;
+          font-size: 13px;
+          margin-bottom: 10px;
+        }
+
+        .search-row {
+          display: grid;
+          grid-template-columns: 1fr 145px;
+          gap: 10px;
+        }
+
+        .input-wrap {
           display: flex;
           align-items: center;
-          justify-content: center;
-          font-size: 29px;
-          font-weight: bold;
-        }
-
-        .section-label {
-          color: #b08a39;
-          font-size: 11px;
-          font-weight: 900;
-          letter-spacing: 1.7px;
-          margin: 0 0 5px;
-        }
-
-        .card-header h2 {
-          margin: 0;
-          font-family: Georgia, "Times New Roman", serif;
-          font-size: 30px;
-          color: #4f1815;
-        }
-
-        .card-description {
-          margin: 22px 0 26px;
-          color: #786963;
-          line-height: 1.7;
-          font-size: 15px;
-        }
-
-        .query-types {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
           gap: 10px;
-          margin-bottom: 30px;
-        }
-
-        .query-type {
-          min-height: 92px;
-          padding: 14px 12px;
-          border: 1px solid #e9dfda;
-          border-radius: 12px;
-          background: #fbfaf9;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          gap: 7px;
-          transition: 0.25s ease;
-          cursor: pointer;
-          text-align: left;
-          font-family: inherit;
-        }
-
-        .query-type:hover {
-          border-color: #b56a6a;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(90, 30, 25, 0.07);
-        }
-
-        .query-type.active {
-          border-color: #9c3030;
-          background: #fff8f5;
-          box-shadow: inset 0 0 0 1px rgba(156, 48, 48, 0.08);
-        }
-
-        .query-icon {
-          color: #7d171d;
-          font-size: 20px;
-          font-weight: bold;
-        }
-
-        .query-type strong {
-          display: block;
-          color: #4f3530;
-          font-size: 12px;
-          line-height: 1.25;
-        }
-
-        .query-type span {
-          display: block;
-          color: #a3938c;
-          font-size: 10px;
-          margin-top: 3px;
-        }
-
-        .consulta-form {
-          background: #f8f5f2;
-          border-radius: 14px;
-          padding: 22px;
-          border: 1px solid #eee5df;
-        }
-
-        .consulta-form label {
-          display: block;
-          color: #49302b;
-          font-size: 13px;
-          font-weight: 800;
-          margin-bottom: 9px;
-        }
-
-        .input-row {
-          display: flex;
-          gap: 12px;
-        }
-
-        .input-wrapper {
-          flex: 1;
-          position: relative;
-        }
-
-        .input-icon {
-          position: absolute;
-          left: 17px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #8a7169;
-          font-size: 22px;
-        }
-
-        .input-wrapper input {
-          width: 100%;
-          box-sizing: border-box;
-          height: 56px;
-          border: 1px solid #dcd0ca;
+          background: white;
+          border: 1px solid #dfd3ce;
           border-radius: 10px;
-          background: #fff;
-          padding: 0 18px 0 48px;
-          color: #382622;
-          font-size: 15px;
-          outline: none;
-          transition: 0.2s ease;
+          padding: 0 14px;
         }
 
-        .input-wrapper input:focus {
-          border-color: #8a2027;
-          box-shadow: 0 0 0 4px rgba(138, 32, 39, 0.08);
+        .input-wrap span {
+          color: #8b151c;
         }
 
-        .consulta-button {
-          height: 56px;
-          min-width: 175px;
+        .input-wrap input {
+          width: 100%;
+          border: 0;
+          outline: 0;
+          padding: 15px 0;
+          background: transparent;
+          font-size: 14px;
+        }
+
+        .search-button {
           border: 0;
           border-radius: 10px;
-          background: linear-gradient(135deg, #80171e, #5e0d13);
-          color: #fff;
-          font-size: 14px;
-          font-weight: 800;
+          background: #830f16;
+          color: white;
+          font-weight: 900;
           cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          box-shadow: 0 8px 20px rgba(94, 13, 19, 0.2);
-          transition: 0.25s ease;
+          box-shadow:
+            0 8px 18px rgba(112, 10, 20, 0.18);
         }
 
-        .consulta-button:hover:not(:disabled) {
-          transform: translateY(-2px);
-        }
-
-        .consulta-button:disabled {
-          opacity: 0.7;
+        .search-button:disabled {
+          opacity: 0.65;
           cursor: wait;
         }
 
-        .spinner {
-          width: 15px;
-          height: 15px;
-          border: 2px solid rgba(255, 255, 255, 0.35);
-          border-top-color: #fff;
+        .search-box > small {
+          display: block;
+          margin-top: 9px;
+          color: #998c86;
+          font-size: 10px;
+        }
+
+        .error-box {
+          display: flex;
+          gap: 14px;
+          margin-top: 20px;
+          padding: 18px;
+          border: 1px solid #efcccc;
+          background: #fff7f7;
+          border-radius: 12px;
+          color: #7e1717;
+        }
+
+        .error-icon {
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
-          animation: spin 0.7s linear infinite;
+          background: #b42020;
+          color: white;
+          display: grid;
+          place-items: center;
+          font-weight: 900;
         }
 
-        .input-help {
-          margin: 9px 0 0;
-          color: #9a8982;
-          font-size: 11px;
+        .error-box p {
+          margin: 5px 0 0;
+          font-size: 12px;
         }
 
-        .consulta-result {
-          margin-top: 25px;
-          border-radius: 14px;
+        .license-result {
+          margin-top: 24px;
+          border: 1px solid #e5d8d2;
+          border-radius: 17px;
           overflow: hidden;
+          box-shadow:
+            0 15px 35px rgba(65, 31, 20, 0.08);
         }
 
-        .result-success {
-          background: #fbfdfb;
-          border: 1px solid #dce9df;
-        }
-
-        .result-error {
-          background: #fff8f7;
-          border: 1px solid #efd8d4;
-        }
-
-        .result-top {
-          padding: 23px 25px;
+        .result-header {
+          background:
+            linear-gradient(
+              135deg,
+              #870f17,
+              #650a10
+            );
+          color: white;
+          padding: 22px 26px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 20px;
         }
 
-        .result-status {
+        .result-brand {
           display: flex;
           align-items: center;
-          gap: 13px;
+          gap: 14px;
         }
 
-        .status-check {
-          width: 39px;
-          height: 39px;
-          border-radius: 50%;
-          background: #e7f3e9;
-          color: #2c7a3d;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 900;
+        .mini-seal {
+          width: 48px;
+          height: 48px;
+          font-size: 14px;
+          flex-shrink: 0;
         }
 
-        .result-label {
-          display: block;
-          color: #5e9069;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 1px;
-        }
-
-        .result-status strong {
-          display: block;
-          margin-top: 4px;
-          color: #304f37;
-          font-size: 15px;
-        }
-
-        .result-code {
-          text-align: right;
-        }
-
-        .result-code span {
-          display: block;
-          color: #9b928d;
+        .result-brand span {
+          color: #e8c36c;
           font-size: 9px;
+        }
+
+        .result-brand h3 {
+          margin: 4px 0 0;
+          font-family: Georgia, serif;
+          font-size: 25px;
+        }
+
+        .status {
+          border: 1px solid rgba(255,255,255,.25);
+          background: rgba(255,255,255,.1);
+          border-radius: 30px;
+          padding: 9px 15px;
           font-weight: 800;
-          letter-spacing: 1px;
+          font-size: 12px;
+          white-space: nowrap;
         }
 
-        .result-code strong {
-          color: #54221d;
-          font-size: 18px;
+        .status i,
+        .result-footer strong i {
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          background: #39a85b;
+          border-radius: 50%;
+          margin-right: 7px;
         }
 
-        .result-divider {
-          height: 1px;
-          background: #e3ebe4;
+        .holder {
+          padding: 23px 27px;
+          border-bottom: 1px solid #eee5e0;
         }
 
-        .result-grid {
+        .holder h4 {
+          margin: 8px 0 0;
+          font-size: 24px;
+          letter-spacing: 0.5px;
+        }
+
+        .holder p {
+          margin: 4px 0 0;
+          font-size: 16px;
+          font-weight: 700;
+          color: #5f4b45;
+        }
+
+        .data-grid {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns:
+            repeat(2, 1fr);
         }
 
-        .result-item {
-          padding: 20px 25px;
-          border-bottom: 1px solid #edf0ed;
+        .data-item {
+          padding: 20px 27px;
+          border-bottom: 1px solid #eee5e0;
         }
 
-        .result-item:nth-child(odd) {
-          border-right: 1px solid #edf0ed;
+        .data-item:nth-child(odd) {
+          border-right: 1px solid #eee5e0;
         }
 
-        .result-item span {
+        .data-item span,
+        .result-footer span {
           display: block;
-          color: #958983;
-          font-size: 11px;
+          color: #927f77;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 1.5px;
           margin-bottom: 7px;
         }
 
-        .result-item strong {
-          color: #422c27;
+        .data-item strong {
           font-size: 14px;
+          color: #38221d;
         }
 
-        .state {
+        .result-footer {
+          padding: 17px 27px;
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 7px;
+          background: #fbf9f7;
         }
 
-        .state i {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          background: #3b8a4b;
-        }
-
-        .error-content {
-          padding: 24px;
-          display: flex;
-          gap: 14px;
-          align-items: flex-start;
-        }
-
-        .error-icon {
-          width: 35px;
-          height: 35px;
-          flex: 0 0 auto;
-          border-radius: 50%;
-          background: #f8deda;
-          color: #9a2821;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 900;
-        }
-
-        .error-content strong {
-          color: #7a2821;
-          font-size: 14px;
-        }
-
-        .error-content p {
-          margin: 5px 0 0;
-          color: #8b6d68;
+        .result-footer strong {
+          display: block;
+          color: #28783f;
           font-size: 13px;
         }
 
-        .information-box {
-          margin-top: 25px;
-          padding: 18px 20px;
-          border-radius: 12px;
-          background: #f7f3ed;
+        .consulted {
+          color: #776b66;
+          font-size: 11px;
+        }
+
+        .info-box {
           display: flex;
           gap: 13px;
-          border: 1px solid #ece1d5;
+          margin-top: 22px;
+          padding: 17px;
+          background: #faf6ee;
+          border: 1px solid #eee1ca;
+          border-radius: 12px;
         }
 
-        .information-icon {
-          width: 25px;
-          height: 25px;
-          flex: 0 0 auto;
+        .info-icon {
+          width: 28px;
+          height: 28px;
+          flex-shrink: 0;
+          display: grid;
+          place-items: center;
           border-radius: 50%;
-          background: #c9a45c;
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          background: #d1a94e;
+          color: white;
           font-weight: 900;
-          font-size: 13px;
         }
 
-        .information-box strong {
-          color: #65483f;
+        .info-box strong {
           font-size: 12px;
         }
 
-        .information-box p {
-          margin: 4px 0 0;
-          color: #8d7c74;
+        .info-box p {
+          color: #887d75;
+          font-size: 10px;
+          margin: 5px 0 0;
+          line-height: 1.5;
+        }
+
+        .bottom-section {
+          text-align: center;
+          padding: 70px 20px;
+          background: #eee9e3;
+          margin-top: 70px;
+        }
+
+        .bottom-section h2 {
+          font-family: Georgia, serif;
+          font-size: 30px;
+          margin: 10px 0;
+        }
+
+        .bottom-section > p {
+          color: #81756e;
+          font-size: 13px;
+        }
+
+        .bottom-cards {
+          width: min(850px, 100%);
+          margin: 28px auto 0;
+          display: grid;
+          grid-template-columns:
+            repeat(3, 1fr);
+          gap: 14px;
+          text-align: left;
+        }
+
+        .bottom-cards > div {
+          background: white;
+          border: 1px solid #e5dbd4;
+          border-radius: 14px;
+          padding: 22px;
+        }
+
+        .bottom-cards b {
+          display: block;
+          color: #8a1118;
+          margin-bottom: 15px;
+          font-size: 20px;
+        }
+
+        .bottom-cards strong {
+          display: block;
+          font-size: 13px;
+        }
+
+        .bottom-cards p {
+          color: #8b8079;
           font-size: 11px;
           line-height: 1.5;
         }
 
-        .consulta-services {
-          background: #f0ebe6;
-          padding: 70px 20px;
-        }
-
-        .services-container {
-          max-width: 1050px;
-          margin: auto;
-        }
-
-        .services-heading {
-          text-align: center;
-          max-width: 650px;
-          margin: 0 auto 35px;
-        }
-
-        .services-heading p {
-          color: #b08a39;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 2px;
-          margin: 0 0 8px;
-        }
-
-        .services-heading h2 {
-          margin: 0;
-          color: #54201b;
-          font-family: Georgia, "Times New Roman", serif;
-          font-size: 31px;
-        }
-
-        .services-heading span {
-          display: block;
-          margin-top: 10px;
-          color: #887872;
-          font-size: 14px;
-        }
-
-        .service-cards {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 18px;
-        }
-
-        .service-card {
-          background: #fff;
-          padding: 28px;
-          border-radius: 14px;
-          border: 1px solid #e6ddd7;
-          transition: 0.25s ease;
-        }
-
-        .service-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 15px 35px rgba(72, 40, 31, 0.08);
-        }
-
-        .service-card-icon {
-          width: 43px;
-          height: 43px;
-          border-radius: 11px;
-          background: #f7eee9;
-          color: #79171d;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 21px;
-          font-weight: 900;
-          margin-bottom: 18px;
-        }
-
-        .service-card h3 {
-          color: #4f302a;
-          font-size: 16px;
-          margin: 0 0 8px;
-        }
-
-        .service-card p {
-          color: #887a75;
-          font-size: 13px;
-          line-height: 1.6;
-          margin: 0;
-        }
-
-        .consulta-footer {
-          background: #4d0b10;
-          color: #fff;
-          padding: 30px 7%;
-        }
-
-        .footer-inner {
-          max-width: 1050px;
-          margin: auto;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 20px;
-        }
-
-        .footer-inner strong {
-          display: block;
-          color: #e4c67e;
-          font-size: 12px;
-          letter-spacing: 0.7px;
-        }
-
-        .footer-inner span {
-          display: block;
-          color: rgba(255, 255, 255, 0.65);
-          font-size: 11px;
-          margin-top: 4px;
-        }
-
-        .footer-inner p {
-          margin: 0;
-          color: rgba(255, 255, 255, 0.55);
-          font-size: 11px;
-        }
-
-.license-result {
-  margin-top: 25px;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 15px 40px rgba(65, 30, 25, 0.1);
-}
-
-.license-success {
-  border: 1px solid #dfd5cf;
-}
-
-.license-header {
-  background: linear-gradient(135deg, #5d0d13, #86191f);
-  color: white;
-  padding: 22px 26px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.license-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.license-seal {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid #d8b35e;
-  color: #f0d27f;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 13px;
-}
-
-.license-brand span {
-  display: block;
-  color: #e5c776;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 1.5px;
-}
-
-.license-brand h3 {
-  margin: 5px 0 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 21px;
-  font-weight: 600;
-}
-
-.license-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.18);
-  padding: 9px 13px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.license-status i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #72d27f;
-  box-shadow: 0 0 8px rgba(114,210,127,0.7);
-}
-
-.license-title {
-  padding: 22px 26px 17px;
-  border-bottom: 1px solid #eee5df;
-}
-
-.license-title span {
-  display: block;
-  color: #b08a39;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 1.5px;
-  margin-bottom: 6px;
-}
-
-.license-title strong {
-  display: block;
-  color: #4d211c;
-  font-size: 19px;
-  text-transform: uppercase;
-}
-
-.license-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-}
-
-.license-grid > div {
-  padding: 18px 26px;
-  border-bottom: 1px solid #eee8e3;
-}
-
-.license-grid > div:nth-child(odd) {
-  border-right: 1px solid #eee8e3;
-}
-
-.license-grid span {
-  display: block;
-  color: #9a8982;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  margin-bottom: 6px;
-}
-
-.license-grid strong {
-  color: #3f2a25;
-  font-size: 14px;
-}
-
-.license-footer {
-  padding: 17px 26px;
-  background: #faf7f4;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.license-footer span {
-  display: block;
-  color: #9a8982;
-  font-size: 9px;
-  font-weight: 800;
-  margin-bottom: 5px;
-}
-
-.license-footer strong {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: #2f6f3b;
-  font-size: 13px;
-}
-
-.license-footer strong i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #3b8a4b;
-}
-
-.verified {
-  color: #88756d;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.license-error {
-  border: 1px solid #efd8d4;
-  background: #fff8f7;
-}
-
-.license-error-content {
-  padding: 24px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.license-error-content strong {
-  color: #7a2821;
-  font-size: 14px;
-}
-
-.license-error-content p {
-  margin: 5px 0 0;
-  color: #8b6d68;
-  font-size: 13px;
-}
-
-@media (max-width: 650px) {
-  .license-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .license-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .license-grid > div:nth-child(odd) {
-    border-right: 0;
-  }
-
-  .license-footer {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-        @keyframes heroIn {
-          from {
-            opacity: 0;
-            transform: translateY(18px);
+        @media (max-width: 700px) {
+          .hero {
+            padding-bottom: 75px;
           }
 
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes shine {
-          0%,
-          100% {
-            transform: translateX(-25%);
-            opacity: 0.3;
+          .hero h1 {
+            font-size: 42px;
           }
 
-          50% {
-            transform: translateX(25%);
-            opacity: 0.8;
-          }
-        }
-
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @media (max-width: 850px) {
-          .consulta-topbar {
-            padding: 0 20px;
+          .main-card {
+            padding: 20px;
           }
 
-          .query-types {
-            grid-template-columns: repeat(2, 1fr);
+          .type-grid {
+            grid-template-columns:
+              repeat(2, 1fr);
           }
 
-          .service-cards {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        @media (max-width: 650px) {
-          .consulta-topbar {
-            height: auto;
-            padding: 15px 18px;
-            gap: 15px;
-          }
-
-          .brand-text strong {
-            font-size: 11px;
-          }
-
-          .brand-text span {
-            font-size: 10px;
-          }
-
-          .consulta-seal {
-            width: 42px;
-            height: 42px;
-          }
-
-          .consulta-nav {
-            gap: 14px;
-          }
-
-          .consulta-nav a {
-            font-size: 12px;
-            padding: 15px 0;
-          }
-
-          .consulta-nav a.active::after {
-            bottom: 7px;
-          }
-
-          .consulta-hero {
-            min-height: 300px;
-          }
-
-          .consulta-container {
-            margin-top: -35px;
-            padding-left: 12px;
-            padding-right: 12px;
-          }
-
-          .consulta-card {
-            padding: 22px 17px;
-            border-radius: 15px;
-          }
-
-          .card-header h2 {
-            font-size: 24px;
-          }
-
-          .query-types {
-            grid-template-columns: 1fr 1fr;
-          }
-
-          .input-row {
-            flex-direction: column;
-          }
-
-          .consulta-button {
-            width: 100%;
-          }
-
-          .result-top {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .result-code {
-            text-align: left;
-          }
-
-          .result-grid {
+          .search-row {
             grid-template-columns: 1fr;
           }
 
-          .result-item:nth-child(odd) {
+          .search-button {
+            min-height: 48px;
+          }
+
+          .data-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .data-item:nth-child(odd) {
             border-right: 0;
           }
 
-          .footer-inner {
-            flex-direction: column;
+          .result-header {
             align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .result-footer {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .bottom-cards {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
