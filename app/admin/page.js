@@ -1,360 +1,283 @@
-"use client";
+import { neon } from "@neondatabase/serverless";
 
-import { useEffect, useState } from "react";
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL no está configurada.");
+}
 
-const empty = {
-  codigo: "",
-  nombre: "",
-  tipo: "Licencia",
-  estado: "Activo",
-  fecha: ""
-};
+const sql = neon(process.env.DATABASE_URL);
 
-export default function Admin() {
-  const [items, setItems] = useState([]);
-  const [form, setForm] = useState(empty);
-  const [editing, setEditing] = useState(null);
-  const [error, setError] = useState("");
-  const [loggingOut, setLoggingOut] = useState(false);
+function validateText(value, field, maxLength) {
+  const text = String(value ?? "").trim();
 
-  async function load() {
-    try {
-      setError("");
-
-      const r = await fetch("/api/registros", {
-        cache: "no-store"
-      });
-
-      const data = await r.json();
-
-      if (!r.ok || !data.ok) {
-        throw new Error(
-          data.message || "No se pudieron cargar los registros."
-        );
-      }
-
-      setItems(Array.isArray(data.registros) ? data.registros : []);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Error al cargar los registros.");
-      setItems([]);
-    }
+  if (!text) {
+    throw new Error(`${field} es obligatorio.`);
   }
 
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function save(e) {
-    e.preventDefault();
-
-    try {
-      setError("");
-
-      const method = editing ? "PUT" : "POST";
-      const url = editing
-        ? `/api/registros/${editing}`
-        : "/api/registros";
-
-      const r = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(form)
-      });
-
-      const data = await r.json();
-
-      if (!r.ok || !data.ok) {
-        throw new Error(
-          data.message || "No se pudo guardar el registro."
-        );
-      }
-
-      setForm(empty);
-      setEditing(null);
-
-      await load();
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Error al guardar.");
-    }
+  if (text.length > maxLength) {
+    throw new Error(`${field} supera el límite permitido.`);
   }
 
-  async function remove(id) {
-    if (!confirm("¿Eliminar este registro?")) return;
+  return text;
+}
 
-    try {
-      setError("");
-
-      const r = await fetch(`/api/registros/${id}`, {
-        method: "DELETE"
-      });
-
-      const data = await r.json();
-
-      if (!r.ok || !data.ok) {
-        throw new Error(
-          data.message || "No se pudo eliminar el registro."
-        );
-      }
-
-      await load();
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Error al eliminar.");
-    }
+function validateOptionalText(value, field, maxLength) {
+  if (value === undefined || value === null) {
+    return null;
   }
 
-  async function logout() {
-    if (loggingOut) return;
+  const text = String(value).trim();
 
-    try {
-      setLoggingOut(true);
-      setError("");
-
-      const r = await fetch("/api/auth/logout", {
-        method: "POST",
-        cache: "no-store"
-      });
-
-      if (!r.ok) {
-        throw new Error("No se pudo cerrar la sesión.");
-      }
-
-      window.location.replace("/admin/login");
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "No se pudo cerrar la sesión.");
-      setLoggingOut(false);
-    }
+  if (!text) {
+    return null;
   }
 
-  function edit(x) {
-    setEditing(x.id);
-
-    setForm({
-      codigo: x.codigo || "",
-      nombre: x.nombre || "",
-      tipo: x.tipo || "Licencia",
-      estado: x.estado || "Activo",
-      fecha: x.fecha
-        ? String(x.fecha).slice(0, 10)
-        : ""
-    });
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
+  if (text.length > maxLength) {
+    throw new Error(`${field} supera el límite permitido.`);
   }
 
-  function cancelEdit() {
-    setEditing(null);
-    setForm(empty);
-    setError("");
+  return text;
+}
+
+function validateDate(value) {
+  const date = String(value ?? "").trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error("La fecha no tiene un formato válido.");
   }
 
-  return (
-    <main>
-      <header className="topbar">
-        <div className="brand">
-          <div className="seal">MC</div>
+  const parsed = new Date(`${date}T00:00:00Z`);
 
-          <div>
-            <strong>Municipalidad de Cusco</strong>
-            <span>Administración</span>
-          </div>
-        </div>
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error("La fecha no es válida.");
+  }
 
-        <nav>
-          <a href="/">Inicio</a>
-          <a href="/consulta">Consulta</a>
-          <a href="/admin">Administración</a>
+  return date;
+}
 
-          <button
-            type="button"
-            className="link danger"
-            onClick={logout}
-            disabled={loggingOut}
-            style={{
-              marginLeft: 12,
-              cursor: loggingOut ? "wait" : "pointer"
-            }}
-          >
-            {loggingOut ? "Cerrando..." : "Cerrar sesión"}
-          </button>
-        </nav>
-      </header>
+export async function getRecords() {
+  const rows = await sql`
+    SELECT
+      id::text AS id,
+      codigo,
+      nombre,
+      tipo,
+      estado,
+      fecha,
+      dni,
+      ce,
+      codigo_licencia
+    FROM registros
+    ORDER BY id DESC
+  `;
 
-      <section className="page wide">
-        <p className="eyebrow">ADMINISTRACIÓN</p>
+  return rows;
+}
 
-        <h1>Panel de registros</h1>
+export async function getRecordByCodigo(codigo) {
+  const cleanCodigo = validateText(codigo, "El código", 100);
 
-        <p className="muted">
-          Gestión de registros almacenados en la base de datos.
-        </p>
+  const rows = await sql`
+    SELECT
+      id::text AS id,
+      codigo,
+      nombre,
+      tipo,
+      estado,
+      fecha,
+      dni,
+      ce,
+      codigo_licencia
+    FROM registros
+    WHERE LOWER(codigo) = LOWER(${cleanCodigo})
+    LIMIT 1
+  `;
 
-        {error && (
-          <div
-            className="notice"
-            style={{
-              borderLeft: "4px solid #c62828",
-              marginBottom: "20px"
-            }}
-          >
-            <b>Error:</b> {error}
-          </div>
-        )}
+  return rows[0] || null;
+}
 
-        <form className="admin-form" onSubmit={save}>
-          <input
-            required
-            placeholder="Código"
-            value={form.codigo}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                codigo: e.target.value
-              })
-            }
-          />
+export async function addRecord(body) {
+  const codigo = validateText(body.codigo, "El código", 100);
+  const nombre = validateText(body.nombre, "El nombre", 255);
 
-          <input
-            required
-            placeholder="Nombre"
-            value={form.nombre}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                nombre: e.target.value
-              })
-            }
-          />
+  const tipo = body.tipo
+    ? validateText(body.tipo, "El tipo", 100)
+    : "Licencia";
 
-          <select
-            value={form.tipo}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                tipo: e.target.value
-              })
-            }
-          >
-            <option>Licencia</option>
-            <option>Permiso</option>
-            <option>Registro</option>
-          </select>
+  const estado = body.estado
+    ? validateText(body.estado, "El estado", 100)
+    : "Activo";
 
-          <select
-            value={form.estado}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                estado: e.target.value
-              })
-            }
-          >
-            <option>Activo</option>
-            <option>Observado</option>
-            <option>Vencido</option>
-          </select>
+  const fecha = body.fecha
+    ? validateDate(body.fecha)
+    : new Date().toISOString().slice(0, 10);
 
-          <input
-            type="date"
-            value={form.fecha}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                fecha: e.target.value
-              })
-            }
-          />
-
-          <button className="btn primary" type="submit">
-            {editing
-              ? "Guardar cambios"
-              : "Agregar registro"}
-          </button>
-
-          {editing && (
-            <button
-              type="button"
-              className="btn secondary"
-              onClick={cancelEdit}
-            >
-              Cancelar
-            </button>
-          )}
-        </form>
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan="6">
-                    No hay registros todavía.
-                  </td>
-                </tr>
-              ) : (
-                items.map((x) => (
-                  <tr key={x.id}>
-                    <td>
-                      <b>{x.codigo}</b>
-                    </td>
-
-                    <td>{x.nombre}</td>
-
-                    <td>{x.tipo}</td>
-
-                    <td>{x.estado}</td>
-
-                    <td>
-                      {x.fecha
-                        ? String(x.fecha).slice(0, 10)
-                        : ""}
-                    </td>
-
-                    <td>
-                      <button
-                        className="link"
-                        onClick={() => edit(x)}
-                      >
-                        Editar
-                      </button>
-
-                      <button
-                        className="link danger"
-                        onClick={() => remove(x.id)}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <footer>
-        Portal demostrativo — Municipalidad de Cusco
-      </footer>
-    </main>
+  const dni = validateOptionalText(body.dni, "El DNI", 20);
+  const ce = validateOptionalText(
+    body.ce,
+    "El carné de extranjería",
+    30
   );
+
+  const codigoLicencia = validateOptionalText(
+    body.codigo_licencia,
+    "El código de licencia",
+    100
+  );
+
+  const rows = await sql`
+    INSERT INTO registros
+      (
+        codigo,
+        nombre,
+        tipo,
+        estado,
+        fecha,
+        dni,
+        ce,
+        codigo_licencia
+      )
+    VALUES
+      (
+        ${codigo},
+        ${nombre},
+        ${tipo},
+        ${estado},
+        ${fecha},
+        ${dni},
+        ${ce},
+        ${codigoLicencia}
+      )
+    RETURNING
+      id::text AS id,
+      codigo,
+      nombre,
+      tipo,
+      estado,
+      fecha,
+      dni,
+      ce,
+      codigo_licencia
+  `;
+
+  return rows[0];
+}
+
+export async function updateRecord(id, body) {
+  const numericId = Number(id);
+
+  if (!Number.isInteger(numericId) || numericId <= 0) {
+    throw new Error("ID de registro no válido.");
+  }
+
+  const currentRows = await sql`
+    SELECT
+      id::text AS id,
+      codigo,
+      nombre,
+      tipo,
+      estado,
+      fecha,
+      dni,
+      ce,
+      codigo_licencia
+    FROM registros
+    WHERE id = ${numericId}
+    LIMIT 1
+  `;
+
+  if (currentRows.length === 0) {
+    return null;
+  }
+
+  const current = currentRows[0];
+
+  const codigo =
+    body.codigo !== undefined
+      ? validateText(body.codigo, "El código", 100)
+      : current.codigo;
+
+  const nombre =
+    body.nombre !== undefined
+      ? validateText(body.nombre, "El nombre", 255)
+      : current.nombre;
+
+  const tipo =
+    body.tipo !== undefined
+      ? validateText(body.tipo, "El tipo", 100)
+      : current.tipo;
+
+  const estado =
+    body.estado !== undefined
+      ? validateText(body.estado, "El estado", 100)
+      : current.estado;
+
+  const fecha =
+    body.fecha !== undefined
+      ? validateDate(body.fecha)
+      : current.fecha;
+
+  const dni =
+    body.dni !== undefined
+      ? validateOptionalText(body.dni, "El DNI", 20)
+      : current.dni;
+
+  const ce =
+    body.ce !== undefined
+      ? validateOptionalText(
+          body.ce,
+          "El carné de extranjería",
+          30
+        )
+      : current.ce;
+
+  const codigoLicencia =
+    body.codigo_licencia !== undefined
+      ? validateOptionalText(
+          body.codigo_licencia,
+          "El código de licencia",
+          100
+        )
+      : current.codigo_licencia;
+
+  const rows = await sql`
+    UPDATE registros
+    SET
+      codigo = ${codigo},
+      nombre = ${nombre},
+      tipo = ${tipo},
+      estado = ${estado},
+      fecha = ${fecha},
+      dni = ${dni},
+      ce = ${ce},
+      codigo_licencia = ${codigoLicencia}
+    WHERE id = ${numericId}
+    RETURNING
+      id::text AS id,
+      codigo,
+      nombre,
+      tipo,
+      estado,
+      fecha,
+      dni,
+      ce,
+      codigo_licencia
+  `;
+
+  return rows[0] || null;
+}
+
+export async function deleteRecord(id) {
+  const numericId = Number(id);
+
+  if (!Number.isInteger(numericId) || numericId <= 0) {
+    return false;
+  }
+
+  const rows = await sql`
+    DELETE FROM registros
+    WHERE id = ${numericId}
+    RETURNING id
+  `;
+
+  return rows.length > 0;
 }
