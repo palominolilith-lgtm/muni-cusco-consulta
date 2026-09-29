@@ -252,113 +252,116 @@ export default function Consulta() {
           </form>
 
           {result && (
-            <div
-              className={`consulta-result ${
-                result.ok
-                  ? "result-success"
-                  : "result-error"
-              }`}
-            >
-              {result.ok ? (
-                <>
-                  <div className="result-top">
-                    <div className="result-status">
-                      <span className="status-check">✓</span>
-
-                      <div>
-                        <span className="result-label">
-                          REGISTRO ENCONTRADO
-                        </span>
-
-                        <strong>
-                          Consulta satisfactoria
-                        </strong>
-                      </div>
-                    </div>
-
-                    <div className="result-code">
-                      <span>CÓDIGO DE REGISTRO</span>
-                      <strong>
-                        {result.registro.codigo || "—"}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div className="result-divider" />
-
-                  <div className="result-grid">
-                    <div className="result-item">
-                      <span>Nombre completo</span>
-                      <strong>
-                        {result.registro.nombre || "—"}
-                      </strong>
-                    </div>
-
-                    <div className="result-item">
-                      <span>Tipo de registro</span>
-                      <strong>
-                        {result.registro.tipo || "—"}
-                      </strong>
-                    </div>
-
-                    <div className="result-item">
-                      <span>DNI</span>
-                      <strong>
-                        {result.registro.dni || "—"}
-                      </strong>
-                    </div>
-
-                    <div className="result-item">
-                      <span>Carné de extranjería</span>
-                      <strong>
-                        {result.registro.ce || "—"}
-                      </strong>
-                    </div>
-
-                    <div className="result-item">
-                      <span>Código de licencia</span>
-                      <strong>
-                        {result.registro.codigo_licencia || "—"}
-                      </strong>
-                    </div>
-
-                    <div className="result-item">
-                      <span>Estado</span>
-
-                      <strong className="state">
-                        <i />
-                        {result.registro.estado || "—"}
-                      </strong>
-                    </div>
-
-                    <div className="result-item">
-                      <span>Fecha de registro</span>
-                      <strong>
-                        {result.registro.fecha
-                          ? String(result.registro.fecha).slice(
-                              0,
-                              10
-                            )
-                          : "—"}
-                      </strong>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="error-content">
-                  <div className="error-icon">!</div>
-
-                  <div>
-                    <strong>
-                      No se encontró el registro
-                    </strong>
-
-                    <p>{result.message}</p>
-                  </div>
-                </div>
-              )}
+  <div
+    className={`license-result ${
+      result.ok ? "license-success" : "license-error"
+    }`}
+  >
+    {result.ok ? (
+      <>
+        <div className="license-header">
+          <div className="license-brand">
+            <div className="license-seal">
+              MC
             </div>
-          )}
+
+            <div>
+              <span>CONSULTA DE LICENCIA</span>
+              <h3>Resultado de consulta</h3>
+            </div>
+          </div>
+
+          <div className="license-status">
+            <i />
+            {result.registro.estado || "—"}
+          </div>
+        </div>
+
+        <div className="license-title">
+          <span>INFORMACIÓN DEL TITULAR</span>
+          <strong>
+            {result.registro.nombre || "NO REGISTRADO"}
+          </strong>
+        </div>
+
+        <div className="license-grid">
+          <div>
+            <span>TIPO DE DOCUMENTO</span>
+            <strong>
+              {result.registro.dni
+                ? "DNI"
+                : result.registro.ce
+                ? "CARNÉ DE EXTRANJERÍA"
+                : "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>NÚMERO DE DOCUMENTO</span>
+            <strong>
+              {result.registro.dni ||
+                result.registro.ce ||
+                "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>TIPO DE REGISTRO</span>
+            <strong>
+              {result.registro.tipo || "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>CÓDIGO DE LICENCIA</span>
+            <strong>
+              {result.registro.codigo_licencia || "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>CÓDIGO DE REGISTRO</span>
+            <strong>
+              {result.registro.codigo || "—"}
+            </strong>
+          </div>
+
+          <div>
+            <span>FECHA DE REGISTRO</span>
+            <strong>
+              {result.registro.fecha
+                ? String(result.registro.fecha).slice(0, 10)
+                : "—"}
+            </strong>
+          </div>
+        </div>
+
+        <div className="license-footer">
+          <div>
+            <span>ESTADO DEL REGISTRO</span>
+            <strong>
+              <i />
+              {result.registro.estado || "—"}
+            </strong>
+          </div>
+
+          <div className="verified">
+            ✓ Registro consultado
+          </div>
+        </div>
+      </>
+    ) : (
+      <div className="license-error-content">
+        <div className="error-icon">!</div>
+
+        <div>
+          <strong>No se encontró el registro</strong>
+          <p>{result.message}</p>
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
           <div className="information-box">
             <div className="information-icon">i</div>
@@ -1143,6 +1146,211 @@ export default function Consulta() {
           font-size: 11px;
         }
 
+.license-result {
+  margin-top: 25px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 15px 40px rgba(65, 30, 25, 0.1);
+}
+
+.license-success {
+  border: 1px solid #dfd5cf;
+}
+
+.license-header {
+  background: linear-gradient(135deg, #5d0d13, #86191f);
+  color: white;
+  padding: 22px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.license-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.license-seal {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #d8b35e;
+  color: #f0d27f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.license-brand span {
+  display: block;
+  color: #e5c776;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.license-brand h3 {
+  margin: 5px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.license-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 9px 13px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.license-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #72d27f;
+  box-shadow: 0 0 8px rgba(114,210,127,0.7);
+}
+
+.license-title {
+  padding: 22px 26px 17px;
+  border-bottom: 1px solid #eee5df;
+}
+
+.license-title span {
+  display: block;
+  color: #b08a39;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+
+.license-title strong {
+  display: block;
+  color: #4d211c;
+  font-size: 19px;
+  text-transform: uppercase;
+}
+
+.license-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.license-grid > div {
+  padding: 18px 26px;
+  border-bottom: 1px solid #eee8e3;
+}
+
+.license-grid > div:nth-child(odd) {
+  border-right: 1px solid #eee8e3;
+}
+
+.license-grid span {
+  display: block;
+  color: #9a8982;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  margin-bottom: 6px;
+}
+
+.license-grid strong {
+  color: #3f2a25;
+  font-size: 14px;
+}
+
+.license-footer {
+  padding: 17px 26px;
+  background: #faf7f4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.license-footer span {
+  display: block;
+  color: #9a8982;
+  font-size: 9px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.license-footer strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #2f6f3b;
+  font-size: 13px;
+}
+
+.license-footer strong i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3b8a4b;
+}
+
+.verified {
+  color: #88756d;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.license-error {
+  border: 1px solid #efd8d4;
+  background: #fff8f7;
+}
+
+.license-error-content {
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.license-error-content strong {
+  color: #7a2821;
+  font-size: 14px;
+}
+
+.license-error-content p {
+  margin: 5px 0 0;
+  color: #8b6d68;
+  font-size: 13px;
+}
+
+@media (max-width: 650px) {
+  .license-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .license-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .license-grid > div:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .license-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
         @keyframes heroIn {
           from {
             opacity: 0;
