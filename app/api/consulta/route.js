@@ -21,10 +21,13 @@ const consultaRateLimit = new Ratelimit({
 });
 
 function getClientIp(request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
+  const forwardedFor =
+    request.headers.get("x-forwarded-for");
 
   if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim();
+    return forwardedFor
+      .split(",")[0]
+      .trim();
   }
 
   return (
@@ -34,81 +37,123 @@ function getClientIp(request) {
   );
 }
 
-async function buscarPorTipo(tipo, valor) {
+async function getRecordByTipo(tipo, valor) {
   if (tipo === "codigo") {
     return getRecordByCodigo(valor);
   }
 
-  let rows = [];
-
   if (tipo === "dni") {
-    rows = await sql`
+    const rows = await sql`
       SELECT
         id::text AS id,
         codigo,
         nombre,
+        apellidos,
+        nombres,
         dni,
         ce,
+        tipo_documento,
+        numero_documento,
         codigo_licencia,
+        clase_categoria,
+        fecha_expedicion,
+        fecha_vencimiento,
+        fecha_revalidacion,
         tipo,
         estado,
         fecha
       FROM registros
-      WHERE LOWER(TRIM(dni)) = LOWER(TRIM(${valor}))
+      WHERE
+        LOWER(TRIM(numero_documento)) =
+        LOWER(TRIM(${valor}))
+        OR
+        LOWER(TRIM(dni)) =
+        LOWER(TRIM(${valor}))
       LIMIT 1
     `;
+
+    return rows[0] || null;
   }
 
   if (tipo === "ce") {
-    rows = await sql`
+    const rows = await sql`
       SELECT
         id::text AS id,
         codigo,
         nombre,
+        apellidos,
+        nombres,
         dni,
         ce,
+        tipo_documento,
+        numero_documento,
         codigo_licencia,
+        clase_categoria,
+        fecha_expedicion,
+        fecha_vencimiento,
+        fecha_revalidacion,
         tipo,
         estado,
         fecha
       FROM registros
-      WHERE LOWER(TRIM(ce)) = LOWER(TRIM(${valor}))
+      WHERE
+        LOWER(TRIM(numero_documento)) =
+        LOWER(TRIM(${valor}))
+        OR
+        LOWER(TRIM(ce)) =
+        LOWER(TRIM(${valor}))
       LIMIT 1
     `;
+
+    return rows[0] || null;
   }
 
   if (tipo === "licencia") {
-    rows = await sql`
+    const rows = await sql`
       SELECT
         id::text AS id,
         codigo,
         nombre,
+        apellidos,
+        nombres,
         dni,
         ce,
+        tipo_documento,
+        numero_documento,
         codigo_licencia,
+        clase_categoria,
+        fecha_expedicion,
+        fecha_vencimiento,
+        fecha_revalidacion,
         tipo,
         estado,
         fecha
       FROM registros
-      WHERE LOWER(TRIM(codigo_licencia)) =
-            LOWER(TRIM(${valor}))
+      WHERE
+        LOWER(TRIM(codigo_licencia)) =
+        LOWER(TRIM(${valor}))
       LIMIT 1
     `;
+
+    return rows[0] || null;
   }
 
-  return rows[0] || null;
+  return null;
 }
 
 export async function GET(req) {
   try {
     const ip = getClientIp(req);
 
-    const rateLimit = await consultaRateLimit.limit(ip);
+    const rateLimit =
+      await consultaRateLimit.limit(ip);
 
     if (!rateLimit.success) {
       const retryAfter = Math.max(
         1,
-        Math.ceil((rateLimit.reset - Date.now()) / 1000)
+        Math.ceil(
+          (rateLimit.reset - Date.now()) / 1000
+        )
       );
 
       return NextResponse.json(
@@ -127,13 +172,17 @@ export async function GET(req) {
       );
     }
 
-    const searchParams = new URL(req.url).searchParams;
+    const searchParams =
+      new URL(req.url).searchParams;
 
-    const q = searchParams.get("q")?.trim();
-    const tipo = searchParams
-      .get("tipo")
-      ?.trim()
-      .toLowerCase();
+    const q =
+      searchParams.get("q")?.trim();
+
+    const tipo =
+      searchParams
+        .get("tipo")
+        ?.trim()
+        .toLowerCase();
 
     if (!q) {
       return NextResponse.json(
@@ -155,7 +204,8 @@ export async function GET(req) {
       return NextResponse.json(
         {
           ok: false,
-          message: "El dato ingresado no es válido.",
+          message:
+            "El dato ingresado no es válido.",
         },
         {
           status: 400,
@@ -173,13 +223,19 @@ export async function GET(req) {
       "licencia",
     ];
 
-    const tipoConsulta = tipo || "codigo";
+    const tipoConsulta =
+      tipo || "codigo";
 
-    if (!tiposPermitidos.includes(tipoConsulta)) {
+    if (
+      !tiposPermitidos.includes(
+        tipoConsulta
+      )
+    ) {
       return NextResponse.json(
         {
           ok: false,
-          message: "Tipo de consulta no válido.",
+          message:
+            "Tipo de consulta no válido.",
         },
         {
           status: 400,
@@ -190,27 +246,29 @@ export async function GET(req) {
       );
     }
 
-    const item = await buscarPorTipo(
-      tipoConsulta,
-      q
-    );
+    const item =
+      await getRecordByTipo(
+        tipoConsulta,
+        q
+      );
 
     if (!item) {
       const mensajes = {
         codigo:
           "No se encontró un registro con ese código.",
         dni:
-          "No se encontró un registro asociado a ese DNI.",
+          "No se encontró una licencia asociada a ese DNI.",
         ce:
-          "No se encontró un registro asociado a ese carné de extranjería.",
+          "No se encontró una licencia asociada a ese carné de extranjería.",
         licencia:
-          "No se encontró un registro con ese código de licencia.",
+          "No se encontró una licencia con ese número.",
       };
 
       return NextResponse.json(
         {
           ok: false,
-          message: mensajes[tipoConsulta],
+          message:
+            mensajes[tipoConsulta],
         },
         {
           status: 404,
