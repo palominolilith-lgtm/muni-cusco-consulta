@@ -2,10 +2,50 @@
 
 import { useState } from "react";
 
+const QUERY_TYPES = {
+  codigo: {
+    title: "Código de registro",
+    label: "Código de consulta",
+    placeholder: "Ejemplo: 101010",
+    help: "Ingresa el código de registro proporcionado.",
+    aria: "Código de registro",
+  },
+  dni: {
+    title: "DNI",
+    label: "Número de DNI",
+    placeholder: "Ejemplo: 12345678",
+    help: "Ingresa el número de documento de identidad.",
+    aria: "Número de DNI",
+  },
+  ce: {
+    title: "CE / Carné de extranjería",
+    label: "Número de carné de extranjería",
+    placeholder: "Ejemplo: CE123456",
+    help: "Ingresa el número de tu carné de extranjería.",
+    aria: "Carné de extranjería",
+  },
+  licencia: {
+    title: "Licencia",
+    label: "Código de licencia",
+    placeholder: "Ejemplo: LIC-001234",
+    help: "Ingresa el código de licencia registrado.",
+    aria: "Código de licencia",
+  },
+};
+
 export default function Consulta() {
+  const [tipo, setTipo] = useState("codigo");
   const [term, setTerm] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const current = QUERY_TYPES[tipo];
+
+  function changeType(newType) {
+    setTipo(newType);
+    setTerm("");
+    setResult(null);
+  }
 
   async function search(e) {
     e.preventDefault();
@@ -15,7 +55,7 @@ export default function Consulta() {
     if (!value) {
       setResult({
         ok: false,
-        message: "Ingresa un código para realizar la consulta.",
+        message: `Ingresa ${current.label.toLowerCase()} para realizar la consulta.`,
       });
       return;
     }
@@ -25,7 +65,9 @@ export default function Consulta() {
 
     try {
       const res = await fetch(
-        `/api/consulta?q=${encodeURIComponent(value)}`,
+        `/api/consulta?tipo=${encodeURIComponent(
+          tipo
+        )}&q=${encodeURIComponent(value)}`,
         {
           cache: "no-store",
         }
@@ -75,13 +117,15 @@ export default function Consulta() {
             </div>
           </div>
 
-          <p className="hero-kicker">MUNICIPALIDAD PROVINCIAL DEL CUSCO</p>
+          <p className="hero-kicker">
+            MUNICIPALIDAD PROVINCIAL DEL CUSCO
+          </p>
 
           <h1>Portal de Consultas</h1>
 
           <p className="hero-description">
             Plataforma de consulta de información y registros municipales.
-            Ingresa los datos solicitados para verificar un registro.
+            Selecciona el tipo de consulta e ingresa el dato solicitado.
           </p>
         </div>
       </section>
@@ -98,55 +142,75 @@ export default function Consulta() {
           </div>
 
           <p className="card-description">
-            Ingresa el código de registro proporcionado para consultar la
+            Selecciona una modalidad de búsqueda para consultar la
             información disponible en el sistema.
           </p>
 
           <div className="query-types">
-            <div className="query-type active">
+            <button
+              type="button"
+              className={`query-type ${
+                tipo === "codigo" ? "active" : ""
+              }`}
+              onClick={() => changeType("codigo")}
+            >
               <div className="query-icon">▣</div>
+
               <div>
                 <strong>Código de registro</strong>
                 <span>Consulta disponible</span>
               </div>
-            </div>
+            </button>
 
-            <div className="query-type">
+            <button
+              type="button"
+              className={`query-type ${
+                tipo === "dni" ? "active" : ""
+              }`}
+              onClick={() => changeType("dni")}
+            >
               <div className="query-icon">▤</div>
+
               <div>
                 <strong>DNI</strong>
-                <span>Próximamente</span>
+                <span>Consulta disponible</span>
               </div>
-            </div>
+            </button>
 
-            <div className="query-type">
+            <button
+              type="button"
+              className={`query-type ${
+                tipo === "ce" ? "active" : ""
+              }`}
+              onClick={() => changeType("ce")}
+            >
               <div className="query-icon">▤</div>
+
               <div>
                 <strong>CE / Carné de extranjería</strong>
-                <span>Próximamente</span>
+                <span>Consulta disponible</span>
               </div>
-            </div>
+            </button>
 
-            <div className="query-type">
+            <button
+              type="button"
+              className={`query-type ${
+                tipo === "licencia" ? "active" : ""
+              }`}
+              onClick={() => changeType("licencia")}
+            >
               <div className="query-icon">▥</div>
+
               <div>
                 <strong>Licencia</strong>
-                <span>Próximamente</span>
+                <span>Consulta disponible</span>
               </div>
-            </div>
-
-            <div className="query-type">
-              <div className="query-icon">▱</div>
-              <div>
-                <strong>Placa</strong>
-                <span>Próximamente</span>
-              </div>
-            </div>
+            </button>
           </div>
 
           <form className="consulta-form" onSubmit={search}>
-            <label htmlFor="codigo">
-              Código de consulta
+            <label htmlFor="consulta">
+              {current.label}
             </label>
 
             <div className="input-row">
@@ -154,12 +218,12 @@ export default function Consulta() {
                 <span className="input-icon">⌕</span>
 
                 <input
-                  id="codigo"
+                  id="consulta"
                   value={term}
                   onChange={(e) => setTerm(e.target.value)}
-                  placeholder="Ejemplo: 101010"
+                  placeholder={current.placeholder}
                   autoComplete="off"
-                  aria-label="Código de consulta"
+                  aria-label={current.aria}
                 />
               </div>
 
@@ -183,15 +247,16 @@ export default function Consulta() {
             </div>
 
             <p className="input-help">
-              Verifica que el código ingresado sea correcto antes de realizar
-              la consulta.
+              {current.help}
             </p>
           </form>
 
           {result && (
             <div
               className={`consulta-result ${
-                result.ok ? "result-success" : "result-error"
+                result.ok
+                  ? "result-success"
+                  : "result-error"
               }`}
             >
               {result.ok ? (
@@ -205,13 +270,17 @@ export default function Consulta() {
                           REGISTRO ENCONTRADO
                         </span>
 
-                        <strong>Consulta satisfactoria</strong>
+                        <strong>
+                          Consulta satisfactoria
+                        </strong>
                       </div>
                     </div>
 
                     <div className="result-code">
-                      <span>CÓDIGO</span>
-                      <strong>{result.registro.codigo}</strong>
+                      <span>CÓDIGO DE REGISTRO</span>
+                      <strong>
+                        {result.registro.codigo || "—"}
+                      </strong>
                     </div>
                   </div>
 
@@ -219,26 +288,59 @@ export default function Consulta() {
 
                   <div className="result-grid">
                     <div className="result-item">
-                      <span>Nombre</span>
-                      <strong>{result.registro.nombre}</strong>
+                      <span>Nombre completo</span>
+                      <strong>
+                        {result.registro.nombre || "—"}
+                      </strong>
                     </div>
 
                     <div className="result-item">
                       <span>Tipo de registro</span>
-                      <strong>{result.registro.tipo}</strong>
+                      <strong>
+                        {result.registro.tipo || "—"}
+                      </strong>
+                    </div>
+
+                    <div className="result-item">
+                      <span>DNI</span>
+                      <strong>
+                        {result.registro.dni || "—"}
+                      </strong>
+                    </div>
+
+                    <div className="result-item">
+                      <span>Carné de extranjería</span>
+                      <strong>
+                        {result.registro.ce || "—"}
+                      </strong>
+                    </div>
+
+                    <div className="result-item">
+                      <span>Código de licencia</span>
+                      <strong>
+                        {result.registro.codigo_licencia || "—"}
+                      </strong>
                     </div>
 
                     <div className="result-item">
                       <span>Estado</span>
+
                       <strong className="state">
                         <i />
-                        {result.registro.estado}
+                        {result.registro.estado || "—"}
                       </strong>
                     </div>
 
                     <div className="result-item">
                       <span>Fecha de registro</span>
-                      <strong>{result.registro.fecha}</strong>
+                      <strong>
+                        {result.registro.fecha
+                          ? String(result.registro.fecha).slice(
+                              0,
+                              10
+                            )
+                          : "—"}
+                      </strong>
                     </div>
                   </div>
                 </>
@@ -247,7 +349,10 @@ export default function Consulta() {
                   <div className="error-icon">!</div>
 
                   <div>
-                    <strong>No se encontró el registro</strong>
+                    <strong>
+                      No se encontró el registro
+                    </strong>
+
                     <p>{result.message}</p>
                   </div>
                 </div>
@@ -262,8 +367,9 @@ export default function Consulta() {
               <strong>Información al ciudadano</strong>
 
               <p>
-                Utilice únicamente información válida y verifique los datos
-                antes de realizar su consulta.
+                Verifica los datos ingresados antes de realizar
+                la consulta. La información mostrada corresponde
+                a los registros disponibles en el sistema.
               </p>
             </div>
           </div>
@@ -274,24 +380,34 @@ export default function Consulta() {
         <div className="services-container">
           <div className="services-heading">
             <p>SERVICIOS DIGITALES</p>
-            <h2>Realiza tus consultas de manera sencilla</h2>
+
+            <h2>
+              Realiza tus consultas de manera sencilla
+            </h2>
+
             <span>
-              Accede a los servicios disponibles desde cualquier dispositivo.
+              Accede a los servicios disponibles desde cualquier
+              dispositivo.
             </span>
           </div>
 
           <div className="service-cards">
             <div className="service-card">
               <div className="service-card-icon">⌕</div>
+
               <h3>Consulta en línea</h3>
+
               <p>
-                Realiza consultas sin necesidad de acudir presencialmente.
+                Realiza consultas de manera rápida desde cualquier
+                dispositivo.
               </p>
             </div>
 
             <div className="service-card">
               <div className="service-card-icon">✓</div>
+
               <h3>Información disponible</h3>
+
               <p>
                 Consulta los registros disponibles en la plataforma.
               </p>
@@ -299,9 +415,12 @@ export default function Consulta() {
 
             <div className="service-card">
               <div className="service-card-icon">◷</div>
+
               <h3>Atención digital</h3>
+
               <p>
-                Servicio disponible desde computadoras, tablets y celulares.
+                Servicio disponible desde computadoras, tablets
+                y celulares.
               </p>
             </div>
           </div>
@@ -311,11 +430,16 @@ export default function Consulta() {
       <footer className="consulta-footer">
         <div className="footer-inner">
           <div>
-            <strong>MUNICIPALIDAD PROVINCIAL DEL CUSCO</strong>
+            <strong>
+              MUNICIPALIDAD PROVINCIAL DEL CUSCO
+            </strong>
+
             <span>Portal de Consultas</span>
           </div>
 
-          <p>© {new Date().getFullYear()} Portal de Consultas</p>
+          <p>
+            © {new Date().getFullYear()} Portal de Consultas
+          </p>
         </div>
       </footer>
 
@@ -329,7 +453,7 @@ export default function Consulta() {
 
         .consulta-topbar {
           height: 82px;
-          background: #ffffff;
+          background: #fff;
           border-bottom: 1px solid #e8dfda;
           display: flex;
           align-items: center;
@@ -422,8 +546,17 @@ export default function Consulta() {
           position: relative;
           overflow: hidden;
           background:
-            radial-gradient(circle at 80% 30%, rgba(211, 170, 83, 0.22), transparent 28%),
-            linear-gradient(120deg, #4d0a10, #78151b 48%, #5a0d12);
+            radial-gradient(
+              circle at 80% 30%,
+              rgba(211, 170, 83, 0.22),
+              transparent 28%
+            ),
+            linear-gradient(
+              120deg,
+              #4d0a10,
+              #78151b 48%,
+              #5a0d12
+            );
           display: flex;
           align-items: center;
           justify-content: center;
@@ -433,13 +566,12 @@ export default function Consulta() {
         .hero-overlay {
           position: absolute;
           inset: 0;
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              rgba(255, 255, 255, 0.035),
-              transparent
-            );
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.035),
+            transparent
+          );
           animation: shine 5s ease-in-out infinite;
         }
 
@@ -486,7 +618,7 @@ export default function Consulta() {
 
         .hero-content h1 {
           margin: 0;
-          color: white;
+          color: #fff;
           font-family: Georgia, "Times New Roman", serif;
           font-size: clamp(38px, 5vw, 62px);
           font-weight: 600;
@@ -509,7 +641,7 @@ export default function Consulta() {
         }
 
         .consulta-card {
-          background: white;
+          background: #fff;
           border-radius: 18px;
           padding: 38px;
           box-shadow: 0 22px 60px rgba(56, 31, 25, 0.13);
@@ -559,7 +691,7 @@ export default function Consulta() {
 
         .query-types {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 10px;
           margin-bottom: 30px;
         }
@@ -575,6 +707,15 @@ export default function Consulta() {
           justify-content: center;
           gap: 7px;
           transition: 0.25s ease;
+          cursor: pointer;
+          text-align: left;
+          font-family: inherit;
+        }
+
+        .query-type:hover {
+          border-color: #b56a6a;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(90, 30, 25, 0.07);
         }
 
         .query-type.active {
@@ -600,6 +741,7 @@ export default function Consulta() {
           display: block;
           color: #a3938c;
           font-size: 10px;
+          margin-top: 3px;
         }
 
         .consulta-form {
@@ -642,7 +784,7 @@ export default function Consulta() {
           height: 56px;
           border: 1px solid #dcd0ca;
           border-radius: 10px;
-          background: white;
+          background: #fff;
           padding: 0 18px 0 48px;
           color: #382622;
           font-size: 15px;
@@ -661,7 +803,7 @@ export default function Consulta() {
           border: 0;
           border-radius: 10px;
           background: linear-gradient(135deg, #80171e, #5e0d13);
-          color: white;
+          color: #fff;
           font-size: 14px;
           font-weight: 800;
           cursor: pointer;
@@ -675,7 +817,6 @@ export default function Consulta() {
 
         .consulta-button:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 12px 25px rgba(94, 13, 19, 0.25);
         }
 
         .consulta-button:disabled {
@@ -687,7 +828,7 @@ export default function Consulta() {
           width: 15px;
           height: 15px;
           border: 2px solid rgba(255, 255, 255, 0.35);
-          border-top-color: white;
+          border-top-color: #fff;
           border-radius: 50%;
           animation: spin 0.7s linear infinite;
         }
@@ -798,7 +939,6 @@ export default function Consulta() {
           margin-bottom: 7px;
         }
 
-        .result-item b,
         .result-item strong {
           color: #422c27;
           font-size: 14px;
@@ -864,7 +1004,7 @@ export default function Consulta() {
           flex: 0 0 auto;
           border-radius: 50%;
           background: #c9a45c;
-          color: white;
+          color: #fff;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -929,7 +1069,7 @@ export default function Consulta() {
         }
 
         .service-card {
-          background: white;
+          background: #fff;
           padding: 28px;
           border-radius: 14px;
           border: 1px solid #e6ddd7;
@@ -970,7 +1110,7 @@ export default function Consulta() {
 
         .consulta-footer {
           background: #4d0b10;
-          color: white;
+          color: #fff;
           padding: 30px 7%;
         }
 
@@ -1043,10 +1183,6 @@ export default function Consulta() {
             grid-template-columns: repeat(2, 1fr);
           }
 
-          .query-type:last-child {
-            grid-column: span 2;
-          }
-
           .service-cards {
             grid-template-columns: 1fr;
           }
@@ -1106,10 +1242,6 @@ export default function Consulta() {
 
           .query-types {
             grid-template-columns: 1fr 1fr;
-          }
-
-          .query-type:last-child {
-            grid-column: span 2;
           }
 
           .input-row {
