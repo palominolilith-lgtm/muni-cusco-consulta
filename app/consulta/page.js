@@ -62,6 +62,52 @@ function formatDate(value) {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
+function getLicenseStatus(registro) {
+  const estado = String(registro?.estado ?? "").trim().toLowerCase();
+  const licencia = String(registro?.codigo_licencia ?? "").trim();
+  const fechaVencimiento = String(
+    registro?.fecha_vencimiento ?? ""
+  ).slice(0, 10);
+
+  let vencida = false;
+
+  if (fechaVencimiento) {
+    const fecha = new Date(`${fechaVencimiento}T23:59:59`);
+    vencida =
+      !Number.isNaN(fecha.getTime()) &&
+      fecha.getTime() < Date.now();
+  }
+
+  const estadoActivo =
+    estado === "activo" ||
+    estado === "activa" ||
+    estado === "vigente" ||
+    estado === "valid" ||
+    estado === "válido" ||
+    estado === "valido";
+
+  const vigente = Boolean(licencia) && estadoActivo && !vencida;
+
+  if (vigente) {
+    return {
+      vigente: true,
+      etiqueta: "Activo",
+      titulo: "Licencia vigente",
+      mensaje:
+        "La licencia se encuentra activa y vigente.",
+    };
+  }
+
+  return {
+    vigente: false,
+    etiqueta: "No vigente",
+    titulo: "Licencia no vigente",
+    mensaje: vencida
+      ? "La licencia se encuentra vencida o no vigente."
+      : "No cuenta con una licencia vigente registrada.",
+  };
+}
+
 export default function ConsultaPage() {
   const [tipo, setTipo] = useState("codigo");
   const [valor, setValor] = useState("");
@@ -151,11 +197,16 @@ export default function ConsultaPage() {
     registro?.nombre ||
     "—";
 
+  const estadoLicencia = getLicenseStatus(registro);
+
   return (
     <main className="consulta-page">
       <section className="hero">
         <div className="seal">
-          MC
+          <img
+            src="/escudo-cusco.png"
+            alt="Escudo de Cusco"
+          />
         </div>
 
         <p className="institution">
@@ -297,7 +348,10 @@ export default function ConsultaPage() {
             <div className="result-header">
               <div className="result-brand">
                 <div className="mini-seal">
-                  MC
+                  <img
+                    src="/escudo-cusco.png"
+                    alt="Escudo de Cusco"
+                  />
                 </div>
 
                 <div>
@@ -311,10 +365,19 @@ export default function ConsultaPage() {
                 </div>
               </div>
 
-              <div className="status">
-                <i />
-                {registro.estado ||
-                  "Activo"}
+              <div
+                className={`status ${
+                  estadoLicencia.vigente
+                    ? "status-valid"
+                    : "status-invalid"
+                }`}
+              >
+                <i>
+                  {estadoLicencia.vigente
+                    ? "✓"
+                    : "✕"}
+                </i>
+                {estadoLicencia.etiqueta}
               </div>
             </div>
 
@@ -445,10 +508,19 @@ export default function ConsultaPage() {
                   ESTADO DE LA LICENCIA
                 </span>
 
-                <strong>
-                  <i />
-                  {registro.estado ||
-                    "Activo"}
+                <strong
+                  className={
+                    estadoLicencia.vigente
+                      ? "footer-valid"
+                      : "footer-invalid"
+                  }
+                >
+                  <i>
+                    {estadoLicencia.vigente
+                      ? "✓"
+                      : "✕"}
+                  </i>
+                  {estadoLicencia.etiqueta}
                 </strong>
               </div>
 
@@ -459,22 +531,34 @@ export default function ConsultaPage() {
           </section>
         )}
 
-        <div className="info-box">
+        <div
+          className={`info-box ${
+            registro
+              ? estadoLicencia.vigente
+                ? "info-valid"
+                : "info-invalid"
+              : ""
+          }`}
+        >
           <div className="info-icon">
-            i
+            {registro
+              ? estadoLicencia.vigente
+                ? "✓"
+                : "✕"
+              : "i"}
           </div>
 
           <div>
             <strong>
-              Información al ciudadano
+              {registro
+                ? estadoLicencia.titulo
+                : "Información al ciudadano"}
             </strong>
 
             <p>
-              Verifica los datos ingresados
-              antes de realizar la consulta.
-              La información mostrada corresponde
-              a los registros disponibles en el
-              sistema.
+              {registro
+                ? estadoLicencia.mensaje
+                : "Verifica los datos ingresados antes de realizar la consulta. La información mostrada corresponde a los registros disponibles en el sistema."}
             </p>
           </div>
         </div>
@@ -529,7 +613,7 @@ export default function ConsultaPage() {
       </section>
 
       <style jsx>{`
-        .consulta-page {
+              .consulta-page {
           min-height: 100vh;
           background: #f5f2ee;
           color: #351717;
@@ -558,16 +642,24 @@ export default function ConsultaPage() {
           align-items: center;
           justify-content: center;
           border: 2px solid #d9ad4a;
-          color: #e6bd61;
+          background: rgba(255, 255, 255, 0.98);
           border-radius: 50%;
-          font-weight: 900;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+
+        .seal img,
+        .mini-seal img {
+          width: 82%;
+          height: 82%;
+          object-fit: contain;
+          display: block;
         }
 
         .seal {
           width: 82px;
           height: 82px;
           margin: 0 auto 15px;
-          font-size: 22px;
           box-shadow:
             0 0 0 7px rgba(217, 173, 74, 0.08);
         }
@@ -820,8 +912,11 @@ export default function ConsultaPage() {
         .mini-seal {
           width: 48px;
           height: 48px;
-          font-size: 14px;
-          flex-shrink: 0;
+        }
+
+        .mini-seal img {
+          width: 82%;
+          height: 82%;
         }
 
         .result-brand span {
@@ -836,23 +931,51 @@ export default function ConsultaPage() {
         }
 
         .status {
-          border: 1px solid rgba(255,255,255,.25);
-          background: rgba(255,255,255,.1);
           border-radius: 30px;
           padding: 9px 15px;
           font-weight: 800;
           font-size: 12px;
           white-space: nowrap;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .status-valid {
+          border: 1px solid rgba(86, 211, 116, 0.45);
+          background: rgba(42, 145, 67, 0.2);
+          color: #dfffe7;
+        }
+
+        .status-invalid {
+          border: 1px solid rgba(255, 126, 116, 0.5);
+          background: rgba(190, 45, 38, 0.22);
+          color: #ffe4e1;
         }
 
         .status i,
         .result-footer strong i {
-          display: inline-block;
-          width: 8px;
-          height: 8px;
-          background: #39a85b;
+          display: inline-grid;
+          place-items: center;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
-          margin-right: 7px;
+          margin: 0;
+          font-style: normal;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .status-valid i,
+        .footer-valid i {
+          background: #2e9d4d;
+          color: white;
+        }
+
+        .status-invalid i,
+        .footer-invalid i {
+          background: #c9372c;
+          color: white;
         }
 
         .holder {
@@ -912,9 +1035,18 @@ export default function ConsultaPage() {
         }
 
         .result-footer strong {
-          display: block;
-          color: #28783f;
+          display: flex;
+          align-items: center;
+          gap: 7px;
           font-size: 13px;
+        }
+
+        .footer-valid {
+          color: #28783f;
+        }
+
+        .footer-invalid {
+          color: #a52b23;
         }
 
         .consulted {
@@ -927,32 +1059,67 @@ export default function ConsultaPage() {
           gap: 13px;
           margin-top: 22px;
           padding: 17px;
-          background: #faf6ee;
-          border: 1px solid #eee1ca;
+          background: #f7f4f1;
+          border: 1px solid #e4dcd6;
           border-radius: 12px;
         }
 
+        .info-box.info-valid {
+          background: #effaf2;
+          border-color: #b9dfc2;
+        }
+
+        .info-box.info-invalid {
+          background: #fff1f0;
+          border-color: #efc1bc;
+        }
+
         .info-icon {
-          width: 28px;
-          height: 28px;
+          width: 30px;
+          height: 30px;
           flex-shrink: 0;
           display: grid;
           place-items: center;
           border-radius: 50%;
-          background: #d1a94e;
+          background: #8c7d74;
           color: white;
           font-weight: 900;
+          font-size: 13px;
+        }
+
+        .info-valid .info-icon {
+          background: #2e9d4d;
+        }
+
+        .info-invalid .info-icon {
+          background: #c9372c;
         }
 
         .info-box strong {
           font-size: 12px;
         }
 
+        .info-box.info-valid strong {
+          color: #246b36;
+        }
+
+        .info-box.info-invalid strong {
+          color: #a52b23;
+        }
+
         .info-box p {
-          color: #887d75;
+          color: #6f655f;
           font-size: 10px;
           margin: 5px 0 0;
           line-height: 1.5;
+        }
+
+        .info-box.info-valid p {
+          color: #3e7650;
+        }
+
+        .info-box.info-invalid p {
+          color: #8e514c;
         }
 
         .bottom-section {
