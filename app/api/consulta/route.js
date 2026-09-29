@@ -2,16 +2,19 @@ import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { neon } from "@neondatabase/serverless";
-import { getRecordByCodigo } from "../../../lib/store";
 
 export const dynamic = "force-dynamic";
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL no está configurada.");
+}
+
+const sql = neon(process.env.DATABASE_URL);
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
 });
-
-const sql = neon(process.env.DATABASE_URL);
 
 const consultaRateLimit = new Ratelimit({
   redis,
@@ -21,13 +24,10 @@ const consultaRateLimit = new Ratelimit({
 });
 
 function getClientIp(request) {
-  const forwardedFor =
-    request.headers.get("x-forwarded-for");
+  const forwardedFor = request.headers.get("x-forwarded-for");
 
   if (forwardedFor) {
-    return forwardedFor
-      .split(",")[0]
-      .trim();
+    return forwardedFor.split(",")[0].trim();
   }
 
   return (
@@ -37,9 +37,40 @@ function getClientIp(request) {
   );
 }
 
-async function getRecordByTipo(tipo, valor) {
+function cleanValue(value) {
+  return String(value ?? "").trim();
+}
+
+async function buscarRegistro(tipo, valor) {
+  const consulta = cleanValue(valor);
+
   if (tipo === "codigo") {
-    return getRecordByCodigo(valor);
+    const rows = await sql`
+      SELECT
+        id::text AS id,
+        codigo,
+        nombre,
+        apellidos,
+        nombres,
+        dni,
+        ce,
+        tipo_documento,
+        numero_documento,
+        codigo_licencia,
+        clase_categoria,
+        fecha_expedicion,
+        fecha_vencimiento,
+        fecha_revalidacion,
+        tipo,
+        estado,
+        fecha
+      FROM registros
+      WHERE LOWER(TRIM(codigo)) = LOWER(TRIM(${consulta}))
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+
+    return rows[0] || null;
   }
 
   if (tipo === "dni") {
@@ -63,12 +94,12 @@ async function getRecordByTipo(tipo, valor) {
         estado,
         fecha
       FROM registros
-      WHERE
-        LOWER(TRIM(numero_documento)) =
-        LOWER(TRIM(${valor}))
-        OR
-        LOWER(TRIM(dni)) =
-        LOWER(TRIM(${valor}))
+      WHERE LOWER(TRIM(dni)) = LOWER(TRIM(${consulta}))
+         OR (
+           LOWER(TRIM(tipo_documento)) = 'dni'
+           AND LOWER(TRIM(numero_documento)) = LOWER(TRIM(${consulta}))
+         )
+      ORDER BY id DESC
       LIMIT 1
     `;
 
@@ -96,12 +127,12 @@ async function getRecordByTipo(tipo, valor) {
         estado,
         fecha
       FROM registros
-      WHERE
-        LOWER(TRIM(numero_documento)) =
-        LOWER(TRIM(${valor}))
-        OR
-        LOWER(TRIM(ce)) =
-        LOWER(TRIM(${valor}))
+      WHERE LOWER(TRIM(ce)) = LOWER(TRIM(${consulta}))
+         OR (
+           LOWER(TRIM(tipo_documento)) IN ('ce', 'carné de extranjería', 'carne de extranjeria')
+           AND LOWER(TRIM(numero_documento)) = LOWER(TRIM(${consulta}))
+         )
+      ORDER BY id DESC
       LIMIT 1
     `;
 
@@ -129,9 +160,8 @@ async function getRecordByTipo(tipo, valor) {
         estado,
         fecha
       FROM registros
-      WHERE
-        LOWER(TRIM(codigo_licencia)) =
-        LOWER(TRIM(${valor}))
+      WHERE LOWER(TRIM(codigo_licencia)) = LOWER(TRIM(${consulta}))
+      ORDER BY id DESC
       LIMIT 1
     `;
 
@@ -141,55 +171,40 @@ async function getRecordByTipo(tipo, valor) {
   return null;
 }
 
-export async function GET(req) {
+export async function GET(request) {
   try {
-    const ip = getClientIp(req);
+    const ip = getClientIp(request);
 
-    const rateLimit =
-      await consultaRateLimit.limit(ip);
+    const rateLimit = await consultaRateLimit.limit(ip);
 
     if (!rateLimit.success) {
-      const retryAfter = Math.max(
-        1,
-        Math.ceil(
-          (rateLimit.reset - Date.now()) / 1000
-        )
-      );
-
       return NextResponse.json(
         {
           ok: false,
           message:
-            "Demasiadas consultas. Intenta nuevamente más tarde.",
+            "Has realizado demasiadas consultas. Espera un momento e inténtalo nuevamente.",
         },
         {
           status: 429,
           headers: {
-            "Retry-After": String(retryAfter),
             "Cache-Control": "no-store",
           },
         }
       );
     }
 
-    const searchParams =
-      new URL(req.url).searchParams;
+    const { searchParams } = new URL(request.url);
 
-    const q =
-      searchParams.get("q")?.trim();
+    const tipo = cleanValue(searchParams.get("tipo")).toLowerCase();
+    const valor = cleanValue(searchParams.get("q"));
 
-    const tipo =
-      searchParams
-        .get("tipo")
-        ?.trim()
-        .toLowerCase();
+    const tiposPermitidos = ["codigo", "dni", "ce", "licencia"];
 
-    if (!q) {
+    if (!tiposPermitidos.includes(tipo)) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Ingresa el dato que deseas consultar.",
+          message: "Tipo de consulta no válido.",
         },
         {
           status: 400,
@@ -200,12 +215,11 @@ export async function GET(req) {
       );
     }
 
-    if (q.length > 100) {
+    if (!valor) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "El dato ingresado no es válido.",
+          message: "Ingresa un dato para realizar la consulta.",
         },
         {
           status: 400,
@@ -216,26 +230,11 @@ export async function GET(req) {
       );
     }
 
-    const tiposPermitidos = [
-      "codigo",
-      "dni",
-      "ce",
-      "licencia",
-    ];
-
-    const tipoConsulta =
-      tipo || "codigo";
-
-    if (
-      !tiposPermitidos.includes(
-        tipoConsulta
-      )
-    ) {
+    if (valor.length > 100) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Tipo de consulta no válido.",
+          message: "El dato ingresado supera el límite permitido.",
         },
         {
           status: 400,
@@ -246,29 +245,13 @@ export async function GET(req) {
       );
     }
 
-    const item =
-      await getRecordByTipo(
-        tipoConsulta,
-        q
-      );
+    const registro = await buscarRegistro(tipo, valor);
 
-    if (!item) {
-      const mensajes = {
-        codigo:
-          "No se encontró un registro con ese código.",
-        dni:
-          "No se encontró una licencia asociada a ese DNI.",
-        ce:
-          "No se encontró una licencia asociada a ese carné de extranjería.",
-        licencia:
-          "No se encontró una licencia con ese número.",
-      };
-
+    if (!registro) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            mensajes[tipoConsulta],
+          message: "No se encontró un registro con los datos ingresados.",
         },
         {
           status: 404,
@@ -282,26 +265,22 @@ export async function GET(req) {
     return NextResponse.json(
       {
         ok: true,
-        tipoConsulta,
-        registro: item,
+        registro,
       },
       {
+        status: 200,
         headers: {
-          "Cache-Control": "no-store",
+          "Cache-Control": "no-store, max-age=0",
         },
       }
     );
   } catch (error) {
-    console.error(
-      "Error en consulta:",
-      error
-    );
+    console.error("Error en consulta:", error);
 
     return NextResponse.json(
       {
         ok: false,
-        message:
-          "Error interno al consultar el registro.",
+        message: "Ocurrió un error al realizar la consulta.",
       },
       {
         status: 500,
