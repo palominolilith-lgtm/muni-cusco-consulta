@@ -611,7 +611,6 @@ export default function ConsultaPage() {
           </div>
         </div>
       </section>
-
       <style jsx>{`
               .consulta-page {
           min-height: 100vh;
@@ -620,6 +619,15 @@ export default function ConsultaPage() {
         }
 
         .hero {
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+          grid-template-areas:
+            "seal institution"
+            "title text";
+          align-items: center;
+          column-gap: clamp(35px, 6vw, 90px);
+          row-gap: 18px;
+
           background:
             radial-gradient(
               circle at 50% 0%,
@@ -631,9 +639,10 @@ export default function ConsultaPage() {
               #741016,
               #4f080d
             );
+
           color: white;
-          text-align: center;
-          padding: 34px 20px 90px;
+          text-align: left;
+          padding: 42px clamp(24px, 7vw, 90px) 105px;
         }
 
         .seal,
@@ -648,31 +657,42 @@ export default function ConsultaPage() {
           flex-shrink: 0;
         }
 
+        .seal {
+          grid-area: seal;
+          width: clamp(100px, 8vw, 124px);
+          height: clamp(100px, 8vw, 124px);
+          margin: 0;
+          justify-self: start;
+          border-width: 3px;
+          box-shadow:
+            0 0 0 8px rgba(217, 173, 74, 0.08),
+            0 14px 35px rgba(0, 0, 0, 0.18);
+        }
+
         .seal img,
         .mini-seal img {
-          width: 82%;
-          height: 82%;
+          width: 88%;
+          height: 88%;
           object-fit: contain;
           display: block;
         }
 
-        .seal {
-          width: 82px;
-          height: 82px;
-          margin: 0 auto 15px;
-          box-shadow:
-            0 0 0 7px rgba(217, 173, 74, 0.08);
-        }
-
         .institution {
+          grid-area: institution;
+          justify-self: end;
+          max-width: 480px;
           color: #e5ba58;
-          font-size: 12px;
-          font-weight: 800;
-          letter-spacing: 4px;
-          margin: 0 0 12px;
+          font-size: clamp(14px, 1.2vw, 18px);
+          font-weight: 900;
+          letter-spacing: clamp(3px, 0.45vw, 6px);
+          line-height: 1.45;
+          text-align: right;
+          margin: 0;
+          text-transform: uppercase;
         }
 
         .hero h1 {
+          grid-area: title;
           margin: 0;
           font-family: Georgia, serif;
           font-size: clamp(42px, 6vw, 68px);
@@ -680,11 +700,14 @@ export default function ConsultaPage() {
         }
 
         .hero-text {
-          max-width: 720px;
-          margin: 22px auto 0;
-          line-height: 1.7;
-          font-size: 15px;
-          opacity: 0.9;
+          grid-area: text;
+          max-width: 560px;
+          justify-self: end;
+          margin: 0;
+          line-height: 1.75;
+          font-size: clamp(14px, 1.15vw, 17px);
+          color: rgba(255, 255, 255, 0.9);
+          text-align: right;
         }
 
         .main-card {
@@ -1175,13 +1198,48 @@ export default function ConsultaPage() {
           line-height: 1.5;
         }
 
-        @media (max-width: 700px) {
+        @media (max-width: 850px) {
           .hero {
-            padding-bottom: 75px;
+            grid-template-columns: 1fr;
+            grid-template-areas:
+              "seal"
+              "institution"
+              "title"
+              "text";
+            justify-items: center;
+            text-align: center;
+            padding: 34px 22px 85px;
+            row-gap: 14px;
+          }
+
+          .seal {
+            width: 96px;
+            height: 96px;
+            justify-self: center;
+            margin: 0 auto 4px;
+          }
+
+          .institution {
+            justify-self: center;
+            max-width: 650px;
+            text-align: center;
+            font-size: 13px;
+            letter-spacing: 3px;
+            line-height: 1.5;
           }
 
           .hero h1 {
-            font-size: 42px;
+            text-align: center;
+            font-size: clamp(38px, 9vw, 52px);
+            line-height: 1.05;
+          }
+
+          .hero-text {
+            justify-self: center;
+            max-width: 620px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.65;
           }
 
           .main-card {
@@ -1221,6 +1279,40 @@ export default function ConsultaPage() {
           }
 
           .bottom-cards {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .hero {
+            padding: 28px 18px 75px;
+            row-gap: 12px;
+          }
+
+          .seal {
+            width: 86px;
+            height: 86px;
+          }
+
+          .institution {
+            font-size: 11px;
+            letter-spacing: 2.2px;
+          }
+
+          .hero h1 {
+            font-size: 38px;
+          }
+
+          .hero-text {
+            font-size: 13px;
+          }
+
+          .main-card {
+            width: calc(100% - 18px);
+            padding: 16px;
+          }
+
+          .type-grid {
             grid-template-columns: 1fr;
           }
         }
