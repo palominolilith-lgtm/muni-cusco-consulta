@@ -34,7 +34,7 @@ function getClientIp(request) {
   );
 }
 
-async function getRecordByTipo(tipo, valor) {
+async function buscarPorTipo(tipo, valor) {
   if (tipo === "codigo") {
     return getRecordByCodigo(valor);
   }
@@ -47,12 +47,12 @@ async function getRecordByTipo(tipo, valor) {
         id::text AS id,
         codigo,
         nombre,
-        tipo,
-        estado,
-        fecha,
         dni,
         ce,
-        codigo_licencia
+        codigo_licencia,
+        tipo,
+        estado,
+        fecha
       FROM registros
       WHERE LOWER(TRIM(dni)) = LOWER(TRIM(${valor}))
       LIMIT 1
@@ -65,12 +65,12 @@ async function getRecordByTipo(tipo, valor) {
         id::text AS id,
         codigo,
         nombre,
-        tipo,
-        estado,
-        fecha,
         dni,
         ce,
-        codigo_licencia
+        codigo_licencia,
+        tipo,
+        estado,
+        fecha
       FROM registros
       WHERE LOWER(TRIM(ce)) = LOWER(TRIM(${valor}))
       LIMIT 1
@@ -83,14 +83,15 @@ async function getRecordByTipo(tipo, valor) {
         id::text AS id,
         codigo,
         nombre,
-        tipo,
-        estado,
-        fecha,
         dni,
         ce,
-        codigo_licencia
+        codigo_licencia,
+        tipo,
+        estado,
+        fecha
       FROM registros
-      WHERE LOWER(TRIM(codigo_licencia)) = LOWER(TRIM(${valor}))
+      WHERE LOWER(TRIM(codigo_licencia)) =
+            LOWER(TRIM(${valor}))
       LIMIT 1
     `;
   }
@@ -129,13 +130,17 @@ export async function GET(req) {
     const searchParams = new URL(req.url).searchParams;
 
     const q = searchParams.get("q")?.trim();
-    const tipo = searchParams.get("tipo")?.trim().toLowerCase();
+    const tipo = searchParams
+      .get("tipo")
+      ?.trim()
+      .toLowerCase();
 
     if (!q) {
       return NextResponse.json(
         {
           ok: false,
-          message: "Ingresa el dato que deseas consultar.",
+          message:
+            "Ingresa el dato que deseas consultar.",
         },
         {
           status: 400,
@@ -185,14 +190,21 @@ export async function GET(req) {
       );
     }
 
-    const item = await getRecordByTipo(tipoConsulta, q);
+    const item = await buscarPorTipo(
+      tipoConsulta,
+      q
+    );
 
     if (!item) {
       const mensajes = {
-        codigo: "No se encontró un registro con ese código.",
-        dni: "No se encontró un registro asociado a ese DNI.",
-        ce: "No se encontró un registro asociado a ese carné de extranjería.",
-        licencia: "No se encontró un registro con ese código de licencia.",
+        codigo:
+          "No se encontró un registro con ese código.",
+        dni:
+          "No se encontró un registro asociado a ese DNI.",
+        ce:
+          "No se encontró un registro asociado a ese carné de extranjería.",
+        licencia:
+          "No se encontró un registro con ese código de licencia.",
       };
 
       return NextResponse.json(
@@ -222,12 +234,16 @@ export async function GET(req) {
       }
     );
   } catch (error) {
-    console.error("Error en consulta:", error);
+    console.error(
+      "Error en consulta:",
+      error
+    );
 
     return NextResponse.json(
       {
         ok: false,
-        message: "Error interno al consultar el registro.",
+        message:
+          "Error interno al consultar el registro.",
       },
       {
         status: 500,
