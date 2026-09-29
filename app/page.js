@@ -580,7 +580,7 @@ export default function Home() {
         </div>
 
         <div className="footer-bottom">
-          © 2026 Municipalidad Provincial del Cusco — Portal institucional
+          © 2025 Municipalidad Provincial del Cusco — Portal institucional
         </div>
 
       </footer>
