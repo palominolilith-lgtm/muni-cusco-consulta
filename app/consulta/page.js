@@ -1242,19 +1242,26 @@ export default function ConsultaPage() {
         }
 
         .hero-side-seal {
-          position: absolute;
-          right: -30px;
-          bottom: -45px;
-          width: 180px;
-          height: 180px;
-          opacity: .08;
-        }
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 85px;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(218, 181, 103, .8);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .07);
+  opacity: .85;
+  z-index: 0;
+}
 
         .hero-side-seal img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+}
 
         .hero-bottom {
           display: flex;
