@@ -2003,6 +2003,48 @@ export default function Home() {
           }
         }
 
+/* AJUSTE DEL AVISO INSTITUCIONAL EN CELULARES */
+@media (max-width: 520px) {
+  .notice-overlay {
+    padding: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .notice-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+    padding: 20px 16px;
+    box-sizing: border-box;
+  }
+
+  .notice-header img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
+  .notice-header strong,
+  .notice-header span {
+    font-size: 13px;
+  }
+
+  .notice-close {
+    width: 34px;
+    height: 34px;
+    top: 10px;
+    right: 10px;
+  }
+
+  .notice-button {
+    width: 100%;
+    max-width: 280px;
+    min-height: 48px;
+    margin: 18px auto 0;
+  }
+}
       `}</style>
 
     </main>
