@@ -1117,12 +1117,13 @@ export default function ConsultaPage() {
         }
 
         .hero-content {
-          display: grid;
-          grid-template-columns: 1.2fr .8fr;
-          align-items: center;
-          gap: 80px;
-          padding: 55px 0 58px;
-        }
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  align-items: center;
+  gap: 55px;
+  padding: 55px 0 58px;
+}
 
         .eyebrow {
           display: flex;
@@ -1186,16 +1187,19 @@ export default function ConsultaPage() {
         }
 
         .hero-side {
-          position: relative;
-          min-height: 270px;
-          padding: 35px;
-          border: 1px solid rgba(225,190,117,.32);
-          background: rgba(31,4,9,.2);
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          overflow: hidden;
-        }
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 270px;
+  padding: 35px;
+  box-sizing: border-box;
+  border: 1px solid rgba(225,190,117,.32);
+  background: rgba(31,4,9,.2);
+  overflow: hidden;
+}
 
         .hero-side-line {
           width: 45px;
