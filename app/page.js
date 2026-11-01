@@ -2004,38 +2004,39 @@ export default function Home() {
         }
 
 /* AJUSTE DEL AVISO INSTITUCIONAL EN CELULARES */
+/* AJUSTE DEL AVISO INSTITUCIONAL EN CELULARES */
 @media (max-width: 520px) {
   .notice-overlay {
-    padding: 10px;
+    padding: 16px;
     align-items: center;
     justify-content: center;
   }
 
   .notice-modal {
-    width: 100%;
-    max-width: 100%;
-    max-height: calc(100dvh - 20px);
+    width: min(380px, calc(100vw - 32px));
+    max-width: 380px;
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
-    padding: 20px 16px;
+    padding: 25px 22px;
     box-sizing: border-box;
   }
 
   .notice-header img {
-    width: 48px;
-    height: 48px;
+    width: 65px;
+    height: 65px;
     object-fit: contain;
   }
 
   .notice-header strong,
   .notice-header span {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .notice-close {
-    width: 34px;
-    height: 34px;
-    top: 10px;
-    right: 10px;
+    width: 38px;
+    height: 38px;
+    top: 12px;
+    right: 12px;
   }
 
   .notice-button {
