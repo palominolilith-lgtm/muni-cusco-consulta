@@ -1041,12 +1041,12 @@ export default function ConsultaPage() {
         }
 
         .hero-inner {
-          position: relative;
-          z-index: 2;
-          width: min(1240px, 90%);
-          margin: auto;
-          padding: 46px 0 22px;
-        }
+  position: relative;
+  z-index: 2;
+  width: min(1320px, 96%);
+  margin: auto;
+  padding: 28px 0 22px;
+}
 
         .hero-decoration {
           position: absolute;
@@ -1119,7 +1119,7 @@ export default function ConsultaPage() {
         .hero-content {
   display: grid;
   width: 100%;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 55px;
   padding: 55px 0 58px;
@@ -1141,18 +1141,19 @@ export default function ConsultaPage() {
           background: #d7b25e;
         }
 
-        .hero-title h1 {
-          margin: 23px 0 20px;
-          font-family: Georgia, serif;
-          font-size: clamp(48px, 6vw, 78px);
-          font-weight: 500;
-          line-height: .98;
-          letter-spacing: -2px;
-        }
+        .hero-title {
+  width: 100%;
+  min-width: 0;
+}
 
-        .hero-title h1 span {
-          color: #e8c77c;
-        }
+.hero-title h1 {
+  margin: 23px 0 20px;
+  font-family: Georgia, serif;
+  font-size: clamp(50px, 5vw, 68px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -2px;
+}
 
         .hero-title > p {
           max-width: 590px;
@@ -1191,7 +1192,9 @@ export default function ConsultaPage() {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  justify-self: end;
   width: 100%;
+  max-width: 430px;
   min-width: 0;
   min-height: 270px;
   padding: 35px;
@@ -1216,14 +1219,17 @@ export default function ConsultaPage() {
         }
 
         .hero-side h2 {
-          position: relative;
-          z-index: 1;
-          margin: 14px 0;
-          font-family: Georgia, serif;
-          font-size: 32px;
-          font-weight: 500;
-          line-height: 1.15;
-        }
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  margin: 14px 0;
+  font-family: Georgia, serif;
+  font-size: clamp(26px, 2.3vw, 32px);
+  font-weight: 500;
+  line-height: 1.2;
+  overflow-wrap: normal;
+  word-break: normal;
+}
 
         .hero-side p {
           position: relative;
@@ -2224,10 +2230,15 @@ export default function ConsultaPage() {
           }
 
           .hero-content {
-            grid-template-columns: 1fr;
-            gap: 28px;
-            padding: 38px 0;
-          }
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+  padding: 38px 0;
+}
+
+.hero-side {
+  justify-self: stretch;
+  max-width: 100%;
+}
 
           .hero-title h1 {
             font-size: clamp(46px,12vw,62px);
