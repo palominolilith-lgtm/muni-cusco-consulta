@@ -143,6 +143,16 @@ export default function Home() {
       )}
 
       {/* =========================
+          FRANJA INSTITUCIONAL
+      ========================== */}
+      <div className="institutional-strip">
+        <div className="institutional-strip-inner">
+          <span>📍 PLAZA REGOCIJO, CUSCO, PERÚ</span>
+          <span className="strip-right">MUNICIPALIDAD PROVINCIAL DEL CUSCO</span>
+        </div>
+      </div>
+
+      {/* =========================
           CABECERA
       ========================== */}
       <header className="topbar">
@@ -229,11 +239,10 @@ export default function Home() {
 
         <div className="hero-content">
 
-          <div className="hero-logo-box">
-            <img
-              src="/escudo-cusco.png"
-              alt="Escudo de Cusco"
-            />
+          <div className="hero-ornament" aria-hidden="true">
+            <span />
+            <b>✦</b>
+            <span />
           </div>
 
           <p className="hero-kicker">
@@ -247,8 +256,8 @@ export default function Home() {
           </h1>
 
           <p className="hero-description">
-            Plataforma digital de información, consultas y servicios
-            para la ciudadanía.
+            Información, consultas y servicios digitales de la
+            Municipalidad Provincial del Cusco.
           </p>
 
           <div className="hero-actions">
@@ -275,6 +284,9 @@ export default function Home() {
           <span>DESCUBRE</span>
           <b>↓</b>
         </div>
+        <small className="hero-image-credit">
+          Fotografía: Diego Delso · Wikimedia Commons · CC BY-SA
+        </small>
 
       </section>
 
@@ -527,8 +539,7 @@ export default function Home() {
             className="interactive-modal"
             onClick={(e) => e.stopPropagation()}
           >
-
-            <button
+                          <button
               type="button"
               className="interactive-close"
               onClick={() => setSelectedService(null)}
@@ -1246,7 +1257,7 @@ export default function Home() {
         .section-heading h2 {
           margin: 0;
           color: #4d171d;
-          font-size: clamp(35px, 5vw, 58px);
+                    font-size: clamp(35px, 5vw, 58px);
           line-height: 1.05;
         }
 
@@ -1889,7 +1900,7 @@ export default function Home() {
           }
 
           .brand-name span {
-            font-size: 13px;
+                      font-size: 13px;
             letter-spacing: 1.5px;
           }
 
@@ -1915,6 +1926,527 @@ export default function Home() {
             font-size: 48px;
           }
 
+        }
+
+        /* =====================================================
+           REDISEÑO VISUAL INSTITUCIONAL — PORTADA CINEMATOGRÁFICA
+           Conserva los componentes y las funciones originales.
+        ====================================================== */
+
+        .institutional-strip {
+          background: #f3e9e5;
+          color: #7c2638;
+          border-bottom: 1px solid rgba(124, 38, 56, .12);
+          font-size: 11px;
+          letter-spacing: 1.1px;
+          font-weight: 700;
+        }
+
+        .institutional-strip-inner {
+          width: min(1380px, 92%);
+          min-height: 38px;
+          margin: auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 15px;
+        }
+
+        .strip-right {
+          color: #9b7a4b;
+        }
+
+        .topbar {
+          min-height: 96px;
+          padding: 0 max(4%, calc((100% - 1380px) / 2));
+          background: rgba(255,255,255,.97);
+          border-bottom: 1px solid rgba(142, 113, 73, .2);
+          box-shadow: 0 5px 25px rgba(32, 18, 15, .045);
+          backdrop-filter: blur(12px);
+        }
+
+        .brand {
+          gap: 16px;
+        }
+
+        .brand-logo {
+          width: 70px;
+          height: 70px;
+          filter: saturate(.9);
+        }
+
+        .brand-name strong {
+          color: #6d2433;
+          font-size: 13px;
+          letter-spacing: 1.1px;
+        }
+
+        .brand-name span {
+          color: #a50c2d;
+          font-size: 19px;
+          letter-spacing: 3px;
+        }
+
+        .navigation {
+          gap: clamp(15px, 2.2vw, 34px);
+        }
+
+        .navigation a {
+          position: relative;
+          padding: 12px 0;
+          color: #3f3430;
+          font-size: 11px;
+          letter-spacing: 1.5px;
+          transition: color .25s ease;
+        }
+
+        .navigation a::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 100%;
+          bottom: 3px;
+          height: 2px;
+          background: #b18b52;
+          transition: right .25s ease;
+        }
+
+        .navigation a:hover {
+          color: #9a1735;
+        }
+
+        .navigation a:hover::after {
+          right: 0;
+        }
+
+        .hero {
+          isolation: isolate;
+          min-height: min(790px, calc(100vh - 134px));
+          padding: 100px 24px 115px;
+          background: #280b15;
+          text-align: center;
+        }
+
+        .hero::before {
+          content: "";
+          position: absolute;
+          z-index: -2;
+          inset: -2%;
+          background-image: url("https://upload.wikimedia.org/wikipedia/commons/0/09/Plaza_de_Armas%2C_Cusco%2C_Per%C3%BA%2C_2015-07-31%2C_DD_53-56_PAN.jpg");
+          background-size: cover;
+          background-position: center 48%;
+          transform: scale(1.04);
+          animation: cuscoHeroDrift 24s ease-in-out infinite alternate;
+        }
+
+        .hero::after {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          inset: 0;
+          background:
+            linear-gradient(90deg, rgba(48, 5, 19, .76), rgba(94, 5, 28, .48) 52%, rgba(35, 7, 18, .72)),
+            linear-gradient(0deg, rgba(23, 7, 13, .55), transparent 55%, rgba(23, 7, 13, .22));
+        }
+
+        .hero-pattern {
+          position: absolute;
+          inset: 0;
+          opacity: .28;
+          background:
+            radial-gradient(circle at 18% 22%, rgba(226, 190, 120, .24), transparent 24%),
+            radial-gradient(circle at 84% 75%, rgba(226, 190, 120, .16), transparent 26%);
+          pointer-events: none;
+        }
+
+        .hero-content {
+          max-width: 1100px;
+          animation: heroContentIn 1.1s cubic-bezier(.2,.75,.25,1) both;
+        }
+
+        .hero-ornament {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 13px;
+          margin: 0 auto 28px;
+          color: #dfbd7d;
+        }
+
+        .hero-ornament span {
+          display: block;
+          width: clamp(45px, 8vw, 105px);
+          height: 1px;
+          background: linear-gradient(90deg, transparent, #dfbd7d);
+        }
+
+        .hero-ornament span:last-child {
+          transform: rotate(180deg);
+        }
+
+        .hero-ornament b {
+          font-size: 18px;
+          font-weight: 400;
+        }
+
+        .hero-kicker {
+          margin: 0 0 23px;
+          color: #e6c98e;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: clamp(3px, .65vw, 7px);
+          text-shadow: 0 2px 12px rgba(0,0,0,.35);
+        }
+
+        .hero h1 {
+          margin: 0 auto 26px;
+          max-width: 1050px;
+          color: #fff;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: clamp(43px, 7.1vw, 92px);
+          font-weight: 400;
+          line-height: 1.06;
+          letter-spacing: .015em;
+          text-shadow: 0 5px 28px rgba(0,0,0,.35);
+        }
+
+        .hero h1 strong {
+          display: inline-block;
+          margin-top: 9px;
+          color: #e5c17b;
+          font-weight: 700;
+          letter-spacing: -.025em;
+        }
+
+        .hero-description {
+          max-width: 720px;
+          margin: 0 auto;
+          color: rgba(255,255,255,.92);
+          font-size: clamp(15px, 1.5vw, 19px);
+          line-height: 1.8;
+          letter-spacing: .035em;
+          text-shadow: 0 2px 12px rgba(0,0,0,.4);
+        }
+
+        .hero-actions {
+          margin-top: 39px;
+          gap: 15px;
+        }
+
+        .gold-button,
+        .outline-button,
+        .dark-button {
+          padding: 16px 30px;
+          border-radius: 2px;
+          font-size: 11px;
+          letter-spacing: 1.8px;
+          transition: transform .25s ease, background .25s ease, border-color .25s ease;
+        }
+
+        .gold-button {
+          background: #d1ad6b;
+          color: #2b1720;
+          box-shadow: 0 8px 28px rgba(0,0,0,.2);
+        }
+
+        .gold-button:hover {
+          background: #ecd19a;
+          transform: translateY(-3px);
+        }
+
+        .outline-button {
+          border: 1px solid rgba(255,255,255,.78);
+          background: rgba(255,255,255,.06);
+          color: white;
+          backdrop-filter: blur(6px);
+        }
+
+        .outline-button:hover {
+          border-color: #e5c17b;
+          background: rgba(255,255,255,.15);
+          transform: translateY(-3px);
+        }
+
+        .hero-scroll {
+          bottom: 24px;
+          color: #f1dfbd;
+          font-size: 9px;
+          letter-spacing: 4px;
+        }
+
+        .hero-scroll b {
+          font-size: 19px;
+          animation: scrollNudge 1.8s ease-in-out infinite;
+        }
+
+        .hero-image-credit {
+          position: absolute;
+          right: 18px;
+          bottom: 13px;
+          color: rgba(255,255,255,.62);
+          font-size: 8px;
+          letter-spacing: .3px;
+        }
+
+        .institution-section,
+        .services-section,
+        .final-section {
+          padding: clamp(75px, 9vw, 125px) 6%;
+        }
+
+        .section-heading {
+          margin-bottom: 60px;
+        }
+
+        .section-heading p {
+          color: #a17c4b;
+          font-size: 11px;
+          letter-spacing: 4px;
+        }
+
+        .section-heading h2 {
+          color: #30252a;
+          font-family: Georgia, "Times New Roman", serif;
+          font-weight: 500;
+          letter-spacing: .015em;
+        }
+
+        .gold-line {
+          width: 70px;
+          height: 2px;
+          background: #b38c54;
+        }
+
+        .institution-card {
+          position: relative;
+          min-height: 410px;
+          border-radius: 2px;
+          background:
+            linear-gradient(rgba(64, 7, 25, .82), rgba(38, 10, 19, .92)),
+            url("https://upload.wikimedia.org/wikipedia/commons/0/09/Plaza_de_Armas%2C_Cusco%2C_Per%C3%BA%2C_2015-07-31%2C_DD_53-56_PAN.jpg") center/cover;
+          border: 1px solid rgba(190, 155, 96, .55);
+          box-shadow: 0 25px 65px rgba(52, 25, 28, .16);
+        }
+
+        .institution-card img {
+          width: 150px;
+          height: 150px;
+          filter: drop-shadow(0 5px 18px rgba(0,0,0,.2));
+        }
+
+        .institution-card strong {
+          font-family: Georgia, "Times New Roman", serif;
+          font-weight: 500;
+          letter-spacing: 1px;
+        }
+
+        .services-section {
+          background: #211b1c;
+          color: white;
+        }
+
+        .services-section .section-heading h2 {
+          color: white;
+        }
+
+        .services-section .section-heading p {
+          color: #d2b078;
+        }
+
+        .service-card {
+          min-height: 255px;
+          border: 1px solid rgba(207, 174, 119, .24);
+          border-radius: 0;
+          background: linear-gradient(145deg, #2c2424, #181415);
+          color: white;
+        }
+
+        .service-card h3 {
+          color: #e8d6b7;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 20px;
+          font-weight: 500;
+        }
+
+        .service-card p {
+          color: rgba(255,255,255,.67);
+        }
+
+        .service-icon,
+        .service-arrow {
+          color: #d1ad6b;
+        }
+
+        .service-card:hover {
+          border-color: #c4a16b;
+          background: linear-gradient(145deg, #44302d, #211719);
+          box-shadow: 0 20px 45px rgba(0,0,0,.28);
+        }
+
+        .consult-section {
+          background: #f7f3ee;
+        }
+
+        .consult-inner {
+          position: relative;
+          border-radius: 0;
+          border: 1px solid rgba(190, 155, 96, .45);
+          background:
+            linear-gradient(105deg, rgba(43, 10, 23, .96), rgba(103, 12, 37, .9)),
+            url("https://upload.wikimedia.org/wikipedia/commons/0/09/Plaza_de_Armas%2C_Cusco%2C_Per%C3%BA%2C_2015-07-31%2C_DD_53-56_PAN.jpg") center/cover;
+          box-shadow: 0 24px 65px rgba(58, 21, 31, .18);
+        }
+
+        .procedures-section {
+          background:
+            linear-gradient(rgba(29, 17, 20, .94), rgba(29, 17, 20, .96)),
+            url("https://upload.wikimedia.org/wikipedia/commons/0/09/Plaza_de_Armas%2C_Cusco%2C_Per%C3%BA%2C_2015-07-31%2C_DD_53-56_PAN.jpg") center/cover fixed;
+        }
+
+        .procedure-item {
+          min-height: 88px;
+          border-bottom-color: rgba(218, 190, 145, .22);
+          transition: background .25s ease, padding .25s ease;
+        }
+
+        .procedure-item:hover {
+          padding-left: 12px;
+          background: rgba(255,255,255,.045);
+        }
+
+        .final-section {
+          background:
+            linear-gradient(rgba(248,246,242,.94), rgba(248,246,242,.96)),
+            url("https://upload.wikimedia.org/wikipedia/commons/0/09/Plaza_de_Armas%2C_Cusco%2C_Per%C3%BA%2C_2015-07-31%2C_DD_53-56_PAN.jpg") center/cover;
+        }
+
+        .footer {
+          border-top: 3px solid #b38c54;
+          background: #171214;
+        }
+
+        .notice-modal,
+        .interactive-modal {
+          border-radius: 2px;
+          border: 1px solid #c8a66d;
+          box-shadow: 0 35px 100px rgba(0,0,0,.45);
+        }
+
+        .notice-modal {
+          border-top: 7px solid #9d1835;
+        }
+
+        .mobile-menu-button {
+          border-radius: 2px;
+        }
+
+        @keyframes cuscoHeroDrift {
+          from { transform: scale(1.04) translate3d(0, 0, 0); }
+          to { transform: scale(1.13) translate3d(-1.2%, -1%, 0); }
+        }
+
+        @keyframes heroContentIn {
+          from { opacity: 0; transform: translateY(28px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scrollNudge {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(6px); }
+        }
+
+        @media (max-width: 800px) {
+          .institutional-strip-inner {
+            min-height: 34px;
+            font-size: 9px;
+          }
+
+          .strip-right {
+            display: none;
+          }
+
+          .topbar {
+            min-height: 78px;
+            padding: 10px 18px;
+          }
+
+          .brand-logo {
+            width: 54px;
+            height: 54px;
+          }
+
+          .navigation {
+            background: #fff;
+          }
+
+          .hero {
+            min-height: 680px;
+            padding: 85px 22px 110px;
+          }
+
+          .hero::before {
+            background-position: 52% center;
+          }
+
+          .hero h1 {
+            font-size: clamp(42px, 9vw, 62px);
+          }
+
+          .hero-description {
+            max-width: 560px;
+            font-size: 15px;
+          }
+
+          .hero-image-credit {
+            right: 10px;
+            bottom: 8px;
+            font-size: 7px;
+          }
+        }
+
+        @media (max-width: 520px) {
+          .institutional-strip-inner {
+            justify-content: center;
+          }
+
+          .hero {
+            min-height: 650px;
+          }
+
+          .hero-kicker {
+            font-size: 9px;
+            line-height: 1.8;
+            letter-spacing: 2.5px;
+          }
+
+          .hero h1 {
+            font-size: 42px;
+            line-height: 1.12;
+          }
+
+          .hero-description {
+            font-size: 14px;
+            line-height: 1.7;
+          }
+
+          .hero-actions {
+            width: min(100%, 330px);
+            margin-left: auto;
+            margin-right: auto;
+          }
+
+          .hero-image-credit {
+            max-width: 180px;
+            text-align: right;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .hero::before,
+          .hero-content,
+          .hero-scroll b {
+            animation: none !important;
+          }
         }
 
       `}</style>
