@@ -6,65 +6,70 @@ const tipos = [
   {
     id: "codigo",
     titulo: "Código de registro",
-    descripcion: "Consulta por ficha"
+    descripcion: "Consulta por ficha",
+    icono: "▣",
   },
   {
     id: "dni",
     titulo: "DNI",
-    descripcion: "Consulta disponible"
+    descripcion: "Consulta disponible",
+    icono: "▤",
   },
   {
     id: "ce",
     titulo: "CE / Carné de extranjería",
-    descripcion: "Consulta disponible"
+    descripcion: "Consulta disponible",
+    icono: "▤",
   },
   {
     id: "licencia",
     titulo: "Licencia",
-    descripcion: "Consulta disponible"
-  }
+    descripcion: "Consulta disponible",
+    icono: "▥",
+  },
 ];
 
 const textos = {
   codigo: {
     label: "Código de registro / ficha",
     placeholder: "Ejemplo: 101010",
-    ayuda: "Ingresa el código de registro proporcionado."
+    ayuda: "Ingresa el código de registro proporcionado.",
   },
   dni: {
     label: "Número de DNI",
     placeholder: "Ejemplo: 40507828",
-    ayuda: "Ingresa el número de DNI."
+    ayuda: "Ingresa el número de DNI.",
   },
   ce: {
     label: "Número de carné de extranjería",
     placeholder: "Ejemplo: 006310958",
-    ayuda: "Ingresa el número de tu carné de extranjería."
+    ayuda: "Ingresa el número de tu carné de extranjería.",
   },
   licencia: {
     label: "Número de licencia",
     placeholder: "Ejemplo: Q-006310958",
-    ayuda: "Ingresa el número de licencia."
-  }
+    ayuda: "Ingresa el número de licencia.",
+  },
 };
 
 function formatDate(value) {
   if (!value) return "—";
 
   const date = String(value).slice(0, 10);
-
   const parts = date.split("-");
 
-  if (parts.length !== 3) {
-    return date;
-  }
+  if (parts.length !== 3) return date;
 
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
 function getLicenseStatus(registro) {
-  const estado = String(registro?.estado ?? "").trim().toLowerCase();
+  const estado = String(registro?.estado ?? "")
+    .trim()
+    .toLowerCase();
+
   const licencia = String(registro?.codigo_licencia ?? "").trim();
+
   const fechaVencimiento = String(
     registro?.fecha_vencimiento ?? ""
   ).slice(0, 10);
@@ -79,13 +84,14 @@ function getLicenseStatus(registro) {
       fecha.getTime() < Date.now();
   }
 
-  const estadoActivo =
-    estado === "activo" ||
-    estado === "activa" ||
-    estado === "vigente" ||
-    estado === "valid" ||
-    estado === "válido" ||
-    estado === "valido";
+  const estadoActivo = [
+    "activo",
+    "activa",
+    "vigente",
+    "valid",
+    "válido",
+    "valido",
+  ].includes(estado);
 
   const vigente =
     Boolean(licencia) &&
@@ -97,8 +103,7 @@ function getLicenseStatus(registro) {
       vigente: true,
       etiqueta: "Activo",
       titulo: "Licencia vigente",
-      mensaje:
-        "La licencia se encuentra activa y vigente."
+      mensaje: "La licencia se encuentra activa y vigente.",
     };
   }
 
@@ -108,7 +113,7 @@ function getLicenseStatus(registro) {
     titulo: "Licencia no vigente",
     mensaje: vencida
       ? "La licencia se encuentra vencida o no vigente."
-      : "No cuenta con una licencia vigente registrada."
+      : "No cuenta con una licencia vigente registrada.",
   };
 }
 
@@ -118,9 +123,8 @@ export default function ConsultaPage() {
   const [registro, setRegistro] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const [servicioActivo, setServicioActivo] =
-    useState(null);
+  const [servicioActivo, setServicioActivo] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function cambiarTipo(nuevoTipo) {
     setTipo(nuevoTipo);
@@ -135,10 +139,7 @@ export default function ConsultaPage() {
     const dato = valor.trim();
 
     if (!dato) {
-      setError(
-        "Ingresa el dato que deseas consultar."
-      );
-
+      setError("Ingresa el dato que deseas consultar.");
       setRegistro(null);
       return;
     }
@@ -150,13 +151,13 @@ export default function ConsultaPage() {
 
       const params = new URLSearchParams({
         tipo,
-        q: dato
+        q: dato,
       });
 
       const response = await fetch(
         `/api/consulta?${params.toString()}`,
         {
-          cache: "no-store"
+          cache: "no-store",
         }
       );
 
@@ -164,21 +165,17 @@ export default function ConsultaPage() {
 
       if (!response.ok || !data.ok) {
         throw new Error(
-          data.message ||
-            "No se encontró información."
+          data.message || "No se encontró información."
         );
       }
 
       setRegistro(data.registro);
-
     } catch (err) {
       console.error(err);
 
       setError(
-        err.message ||
-          "No se pudo realizar la consulta."
+        err.message || "No se pudo realizar la consulta."
       );
-
     } finally {
       setLoading(false);
     }
@@ -192,154 +189,254 @@ export default function ConsultaPage() {
 
   const tipoDocumento =
     registro?.tipo_documento ||
-    (
-      registro?.dni
-        ? "DNI"
-        : registro?.ce
-        ? "CARNÉ DE EXTRANJERÍA"
-        : "—"
-    );
+    (registro?.dni
+      ? "DNI"
+      : registro?.ce
+      ? "CARNÉ DE EXTRANJERÍA"
+      : "—");
 
-  const apellidos =
-    registro?.apellidos ||
-    "—";
+  const apellidos = registro?.apellidos || "—";
 
   const nombres =
     registro?.nombres ||
     registro?.nombre ||
     "—";
 
-  const estadoLicencia =
-    getLicenseStatus(registro);
+  const estadoLicencia = getLicenseStatus(registro);
 
   return (
     <main className="consulta-page">
 
+      {/* BARRA INSTITUCIONAL */}
+      <div className="top-strip">
+        <div className="top-strip-inner">
+          <span>
+            <i className="location-dot">●</i>
+            PLAZA REGOCIJO, CUSCO, PERÚ
+          </span>
+
+          <span className="top-strip-right">
+            MUNICIPALIDAD PROVINCIAL DEL CUSCO
+          </span>
+        </div>
+      </div>
+
+      {/* NAVEGACIÓN */}
+      <header className="site-header">
+        <div className="header-inner">
+
+          <a href="/" className="brand">
+            <div className="brand-seal">
+              <img
+                src="/escudo-cusco.png"
+                alt="Escudo de Cusco"
+              />
+            </div>
+
+            <div className="brand-text">
+              <span>MUNICIPALIDAD PROVINCIAL</span>
+              <strong>DEL CUSCO</strong>
+            </div>
+          </a>
+
+          <button
+            type="button"
+            className="menu-toggle"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Abrir menú"
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
+
+          <nav className={`navigation ${menuOpen ? "open" : ""}`}>
+            <a href="/">INICIO</a>
+            <a href="#consulta" onClick={() => setMenuOpen(false)}>
+              CONSULTA
+            </a>
+            <a href="/#institucion" onClick={() => setMenuOpen(false)}>
+              INSTITUCIÓN
+            </a>
+            <a href="#servicios" onClick={() => setMenuOpen(false)}>
+              SERVICIOS
+            </a>
+            <a href="#contacto" onClick={() => setMenuOpen(false)}>
+              CONTACTO
+            </a>
+          </nav>
+
+        </div>
+      </header>
+
+      {/* PORTADA DE CONSULTAS */}
       <section className="hero">
 
-        <div className="seal">
-          <img
-            src="/escudo-cusco.png"
-            alt="Escudo de Cusco"
-          />
+        <div className="hero-decoration hero-decoration-one" />
+        <div className="hero-decoration hero-decoration-two" />
+
+        <div className="hero-inner">
+
+          <div className="hero-top">
+            <div className="hero-seal">
+              <img
+                src="/escudo-cusco.png"
+                alt="Escudo de Cusco"
+              />
+            </div>
+
+            <div className="hero-institution">
+              <span>PORTAL DE SERVICIOS DIGITALES</span>
+              <strong>
+                MUNICIPALIDAD
+                <br />
+                PROVINCIAL DEL CUSCO
+              </strong>
+            </div>
+          </div>
+
+          <div className="hero-content">
+
+            <div className="hero-title">
+              <span className="eyebrow">
+                <i />
+                PLATAFORMA INSTITUCIONAL
+              </span>
+
+              <h1>
+                Portal de
+                <br />
+                <span>Consultas</span>
+              </h1>
+
+              <p>
+                Accede a la plataforma de consulta de
+                información y registros municipales.
+                Selecciona el tipo de búsqueda e ingresa
+                el dato solicitado.
+              </p>
+
+              <a href="#consulta" className="hero-button">
+                REALIZAR CONSULTA
+                <span>↓</span>
+              </a>
+            </div>
+
+            <div className="hero-side">
+              <div className="hero-side-line" />
+              <span>ATENCIÓN DIGITAL</span>
+              <h2>
+                Información
+                <br />
+                al ciudadano
+              </h2>
+              <p>
+                Un espacio digital para facilitar el
+                acceso a los servicios y consultas
+                disponibles en la plataforma.
+              </p>
+
+              <div className="hero-side-seal">
+                <img
+                  src="/escudo-cusco.png"
+                  alt=""
+                />
+              </div>
+            </div>
+
+          </div>
+
+          <div className="hero-bottom">
+            <span>IDENTIDAD · SERVICIO · CIUDADANÍA</span>
+            <span>PORTAL INSTITUCIONAL</span>
+          </div>
+
         </div>
-
-        <p className="institution">
-          MUNICIPALIDAD PROVINCIAL DEL CUSCO
-        </p>
-
-        <h1>
-          Portal de Consultas
-        </h1>
-
-        <p className="hero-text">
-          Plataforma de consulta de información
-          y registros municipales. Selecciona
-          el tipo de consulta e ingresa el dato
-          solicitado.
-        </p>
-
       </section>
 
-      <section className="main-card">
+      {/* FORMULARIO DE CONSULTA */}
+      <section className="main-card" id="consulta">
 
-        <div className="heading">
+        <div className="section-heading">
 
-          <div className="search-icon">
+          <div className="heading-icon">
             ⌕
           </div>
 
           <div>
-
-            <span>
+            <span className="section-kicker">
               SERVICIO EN LÍNEA
             </span>
 
-            <h2>
-              Consulta de registros
-            </h2>
+            <h2>Consulta de registros</h2>
+          </div>
 
+          <div className="heading-decoration">
+            <span />
+            <span />
+            <span />
           </div>
 
         </div>
 
         <p className="intro">
-          Selecciona una modalidad de búsqueda
-          para consultar la información disponible
-          en el sistema.
+          Selecciona una modalidad de búsqueda para
+          consultar la información disponible en el sistema.
         </p>
 
         <div className="type-grid">
 
           {tipos.map((item) => (
-
             <button
               key={item.id}
               type="button"
               className={`type-card ${
-                tipo === item.id
-                  ? "active"
-                  : ""
+                tipo === item.id ? "active" : ""
               }`}
-              onClick={() =>
-                cambiarTipo(item.id)
-              }
+              onClick={() => cambiarTipo(item.id)}
             >
-
               <div className="type-icon">
-
-                {item.id === "dni"
-                  ? "▤"
-                  : item.id === "ce"
-                  ? "▤"
-                  : item.id === "licencia"
-                  ? "▥"
-                  : "▣"}
-
+                {item.icono}
               </div>
 
-              <strong>
-                {item.titulo}
-              </strong>
+              <strong>{item.titulo}</strong>
 
-              <small>
-                {item.descripcion}
-              </small>
+              <small>{item.descripcion}</small>
 
+              {tipo === item.id && (
+                <span className="type-selected">✓</span>
+              )}
             </button>
-
           ))}
 
         </div>
 
-        <form
-          className="search-box"
-          onSubmit={consultar}
-        >
+        <form className="search-box" onSubmit={consultar}>
 
-          <label>
-            {textos[tipo].label}
-          </label>
+          <div className="search-box-heading">
+            <div>
+              <span className="form-kicker">
+                BÚSQUEDA DE INFORMACIÓN
+              </span>
+
+              <label htmlFor="dato-consulta">
+                {textos[tipo].label}
+              </label>
+            </div>
+
+            <span className="form-number">01 / 01</span>
+          </div>
 
           <div className="search-row">
 
             <div className="input-wrap">
-
-              <span>
-                ⌕
-              </span>
+              <span>⌕</span>
 
               <input
+                id="dato-consulta"
                 value={valor}
-                onChange={(e) =>
-                  setValor(e.target.value)
-                }
-                placeholder={
-                  textos[tipo].placeholder
-                }
+                onChange={(e) => setValor(e.target.value)}
+                placeholder={textos[tipo].placeholder}
                 autoComplete="off"
               />
-
             </div>
 
             <button
@@ -347,47 +444,44 @@ export default function ConsultaPage() {
               type="submit"
               disabled={loading}
             >
-
-              {loading
-                ? "Consultando..."
-                : "Consultar  →"}
-
+              {loading ? (
+                <>
+                  <span className="loading-dot" />
+                  Consultando...
+                </>
+              ) : (
+                <>
+                  Consultar
+                  <span>→</span>
+                </>
+              )}
             </button>
 
           </div>
 
-          <small>
+          <small className="input-help">
+            <span>ⓘ</span>
             {textos[tipo].ayuda}
           </small>
 
         </form>
 
+        {/* MENSAJE DE ERROR */}
         {error && (
+          <div className="error-box" role="alert">
 
-          <div className="error-box">
-
-            <div className="error-icon">
-              !
-            </div>
+            <div className="error-icon">!</div>
 
             <div>
-
-              <strong>
-                No se encontró información
-              </strong>
-
-              <p>
-                {error}
-              </p>
-
+              <strong>No se encontró información</strong>
+              <p>{error}</p>
             </div>
 
           </div>
-
         )}
 
+        {/* RESULTADO DE CONSULTA */}
         {registro && (
-
           <section className="license-result">
 
             <div className="result-header">
@@ -395,24 +489,15 @@ export default function ConsultaPage() {
               <div className="result-brand">
 
                 <div className="mini-seal">
-
                   <img
                     src="/escudo-cusco.png"
                     alt="Escudo de Cusco"
                   />
-
                 </div>
 
                 <div>
-
-                  <span>
-                    CONSULTA DE LICENCIA
-                  </span>
-
-                  <h3>
-                    Resultado de consulta
-                  </h3>
-
+                  <span>CONSULTA DE LICENCIA</span>
+                  <h3>Resultado de consulta</h3>
                 </div>
 
               </div>
@@ -424,160 +509,78 @@ export default function ConsultaPage() {
                     : "status-invalid"
                 }`}
               >
-
                 <i>
-                  {estadoLicencia.vigente
-                    ? "✓"
-                    : "✕"}
+                  {estadoLicencia.vigente ? "✓" : "✕"}
                 </i>
 
                 {estadoLicencia.etiqueta}
-
               </div>
 
             </div>
 
             <div className="holder">
-
-              <span>
-                INFORMACIÓN DEL TITULAR
-              </span>
+              <span>INFORMACIÓN DEL TITULAR</span>
 
               <h4>
-                {apellidos !== "—"
-                  ? apellidos
-                  : nombres}
+                {apellidos !== "—" ? apellidos : nombres}
               </h4>
 
-              {apellidos !== "—" &&
-                registro.nombres && (
-
-                  <p>
-                    {registro.nombres}
-                  </p>
-
-                )}
-
+              {apellidos !== "—" && registro.nombres && (
+                <p>{registro.nombres}</p>
+              )}
             </div>
 
             <div className="data-grid">
 
               <div className="data-item">
-
-                <span>
-                  TIPO DE DOCUMENTO
-                </span>
-
-                <strong>
-                  {tipoDocumento}
-                </strong>
-
+                <span>TIPO DE DOCUMENTO</span>
+                <strong>{tipoDocumento}</strong>
               </div>
 
               <div className="data-item">
-
-                <span>
-                  NÚMERO DE DOCUMENTO
-                </span>
-
-                <strong>
-                  {numeroDocumento}
-                </strong>
-
+                <span>NÚMERO DE DOCUMENTO</span>
+                <strong>{numeroDocumento}</strong>
               </div>
 
               <div className="data-item">
-
-                <span>
-                  TIPO DE REGISTRO
-                </span>
-
-                <strong>
-                  {registro.tipo ||
-                    "LICENCIA"}
-                </strong>
-
+                <span>TIPO DE REGISTRO</span>
+                <strong>{registro.tipo || "LICENCIA"}</strong>
               </div>
 
               <div className="data-item">
-
-                <span>
-                  NÚMERO DE LICENCIA
-                </span>
-
-                <strong>
-                  {registro.codigo_licencia ||
-                    "—"}
-                </strong>
-
+                <span>NÚMERO DE LICENCIA</span>
+                <strong>{registro.codigo_licencia || "—"}</strong>
               </div>
 
               <div className="data-item">
-
-                <span>
-                  CLASE / CATEGORÍA
-                </span>
-
-                <strong>
-                  {registro.clase_categoria ||
-                    "—"}
-                </strong>
-
+                <span>CLASE / CATEGORÍA</span>
+                <strong>{registro.clase_categoria || "—"}</strong>
               </div>
 
               <div className="data-item">
-
-                <span>
-                  FICHA / CÓDIGO DE REGISTRO
-                </span>
-
-                <strong>
-                  {registro.codigo ||
-                    "—"}
-                </strong>
-
+                <span>FICHA / CÓDIGO DE REGISTRO</span>
+                <strong>{registro.codigo || "—"}</strong>
               </div>
 
               <div className="data-item">
-
-                <span>
-                  FECHA DE EXPEDICIÓN
-                </span>
-
+                <span>FECHA DE EXPEDICIÓN</span>
                 <strong>
-                  {formatDate(
-                    registro.fecha_expedicion
-                  )}
+                  {formatDate(registro.fecha_expedicion)}
                 </strong>
-
               </div>
 
               <div className="data-item">
-
-                <span>
-                  FECHA DE VENCIMIENTO
-                </span>
-
+                <span>FECHA DE VENCIMIENTO</span>
                 <strong>
-                  {formatDate(
-                    registro.fecha_vencimiento
-                  )}
+                  {formatDate(registro.fecha_vencimiento)}
                 </strong>
-
               </div>
 
               <div className="data-item">
-
-                <span>
-                  FECHA DE REVALIDACIÓN
-                </span>
-
+                <span>FECHA DE REVALIDACIÓN</span>
                 <strong>
-                  {formatDate(
-                    registro.fecha_revalidacion
-                  )}
+                  {formatDate(registro.fecha_revalidacion)}
                 </strong>
-
               </div>
 
             </div>
@@ -585,10 +588,7 @@ export default function ConsultaPage() {
             <div className="result-footer">
 
               <div>
-
-                <span>
-                  ESTADO DE LA LICENCIA
-                </span>
+                <span>ESTADO DE LA LICENCIA</span>
 
                 <strong
                   className={
@@ -597,17 +597,12 @@ export default function ConsultaPage() {
                       : "footer-invalid"
                   }
                 >
-
                   <i>
-                    {estadoLicencia.vigente
-                      ? "✓"
-                      : "✕"}
+                    {estadoLicencia.vigente ? "✓" : "✕"}
                   </i>
 
                   {estadoLicencia.etiqueta}
-
                 </strong>
-
               </div>
 
               <div className="consulted">
@@ -617,9 +612,9 @@ export default function ConsultaPage() {
             </div>
 
           </section>
-
         )}
 
+        {/* INFORMACIÓN AL CIUDADANO */}
         <div
           className={`info-box ${
             registro
@@ -631,1020 +626,1111 @@ export default function ConsultaPage() {
         >
 
           <div className="info-icon">
-
             {registro
               ? estadoLicencia.vigente
                 ? "✓"
                 : "✕"
               : "i"}
-
           </div>
 
           <div>
-
             <strong>
-
               {registro
                 ? estadoLicencia.titulo
                 : "Información al ciudadano"}
-
             </strong>
 
             <p>
-
               {registro
                 ? estadoLicencia.mensaje
                 : "Verifica los datos ingresados antes de realizar la consulta. La información mostrada corresponde a los registros disponibles en el sistema."}
-
             </p>
-
           </div>
 
         </div>
 
       </section>
 
-      <section className="bottom-section">
+      {/* SERVICIOS DIGITALES */}
+      <section className="bottom-section" id="servicios">
 
-        <span>
-          SERVICIOS DIGITALES
-        </span>
+        <div className="bottom-inner">
 
-        <h2>
-          Realiza tus consultas de manera sencilla
-        </h2>
-
-        <p>
-          Accede a los servicios disponibles
-          desde cualquier dispositivo.
-        </p>
-        <div className="bottom-cards">
-
-          <button
-            type="button"
-            className={`bottom-card ${
-              servicioActivo === "consulta"
-                ? "selected"
-                : ""
-            }`}
-            onClick={() =>
-              setServicioActivo(
-                servicioActivo === "consulta"
-                  ? null
-                  : "consulta"
-              )
-            }
-          >
-
-            <span className="bottom-card-icon">
-              ⌕
+          <div className="bottom-heading">
+            <span className="section-kicker">
+              SERVICIOS DIGITALES
             </span>
 
-            <span className="bottom-card-number">
-              01
-            </span>
-
-            <strong>
-              Consulta en línea
-            </strong>
+            <h2>
+              Atención para
+              <br />
+              <span>el ciudadano</span>
+            </h2>
 
             <p>
-              Realiza consultas de forma rápida
-              y ordenada desde cualquier dispositivo.
+              Accede a la información disponible y utiliza
+              los servicios digitales desde cualquier dispositivo.
             </p>
-
-            <span className="bottom-card-action">
-              {servicioActivo === "consulta"
-                ? "OCULTAR"
-                : "VER INFORMACIÓN"} →
-            </span>
-
-          </button>
-
-
-          <button
-            type="button"
-            className={`bottom-card ${
-              servicioActivo === "informacion"
-                ? "selected"
-                : ""
-            }`}
-            onClick={() =>
-              setServicioActivo(
-                servicioActivo === "informacion"
-                  ? null
-                  : "informacion"
-              )
-            }
-          >
-
-            <span className="bottom-card-icon">
-              ✓
-            </span>
-
-            <span className="bottom-card-number">
-              02
-            </span>
-
-            <strong>
-              Información disponible
-            </strong>
-
-            <p>
-              Conoce qué datos pueden aparecer
-              en el resultado de una consulta.
-            </p>
-
-            <span className="bottom-card-action">
-              {servicioActivo === "informacion"
-                ? "OCULTAR"
-                : "VER INFORMACIÓN"} →
-            </span>
-
-          </button>
-
-
-          <button
-            type="button"
-            className={`bottom-card ${
-              servicioActivo === "atencion"
-                ? "selected"
-                : ""
-            }`}
-            onClick={() =>
-              setServicioActivo(
-                servicioActivo === "atencion"
-                  ? null
-                  : "atencion"
-              )
-            }
-          >
-
-            <span className="bottom-card-icon">
-              ◷
-            </span>
-
-            <span className="bottom-card-number">
-              03
-            </span>
-
-            <strong>
-              Atención digital
-            </strong>
-
-            <p>
-              Consulta desde computadora, tablet
-              o celular de manera sencilla.
-            </p>
-
-            <span className="bottom-card-action">
-              {servicioActivo === "atencion"
-                ? "OCULTAR"
-                : "CÓMO FUNCIONA"} →
-            </span>
-
-          </button>
-
-        </div>
-
-
-        {servicioActivo && (
-
-          <div
-            className="service-detail"
-            aria-live="polite"
-          >
-
-            {servicioActivo === "consulta" && (
-
-              <>
-
-                <div className="service-detail-icon">
-                  ⌕
-                </div>
-
-                <div className="service-detail-content">
-
-                  <span>
-                    01 · CONSULTA EN LÍNEA
-                  </span>
-
-                  <h3>
-                    Consulta rápida y sencilla
-                  </h3>
-
-                  <p>
-                    Selecciona el tipo de búsqueda,
-                    ingresa el dato solicitado y
-                    presiona “Consultar”. El sistema
-                    procesa la solicitud y muestra la
-                    información disponible para ese
-                    registro.
-                  </p>
-
-                  <div className="service-steps">
-
-                    <span>
-                      <b>1</b>
-                      Selecciona
-                    </span>
-
-                    <span>
-                      <b>2</b>
-                      Ingresa el dato
-                    </span>
-
-                    <span>
-                      <b>3</b>
-                      Consulta
-                    </span>
-
-                    <span>
-                      <b>4</b>
-                      Revisa el resultado
-                    </span>
-
-                  </div>
-
-                  <button
-                    type="button"
-                    className="detail-button"
-                    onClick={() =>
-                      window.scrollTo({
-                        top: 0,
-                        behavior: "smooth"
-                      })
-                    }
-                  >
-                    IR A CONSULTA ↑
-                  </button>
-
-                </div>
-
-              </>
-
-            )}
-
-
-            {servicioActivo === "informacion" && (
-
-              <>
-
-                <div className="service-detail-icon">
-                  ✓
-                </div>
-
-                <div className="service-detail-content">
-
-                  <span>
-                    02 · INFORMACIÓN DISPONIBLE
-                  </span>
-
-                  <h3>
-                    Resultados claros y organizados
-                  </h3>
-
-                  <p>
-                    Dependiendo del registro consultado,
-                    el sistema puede mostrar información
-                    del titular, documento, tipo de
-                    registro, licencia, clase o categoría,
-                    fechas y estado.
-                  </p>
-
-                  <div className="service-points">
-
-                    <span>
-                      ✓ Datos del titular
-                    </span>
-
-                    <span>
-                      ✓ Documento registrado
-                    </span>
-
-                    <span>
-                      ✓ Número de licencia
-                    </span>
-
-                    <span>
-                      ✓ Fechas y estado
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </>
-
-            )}
-
-
-            {servicioActivo === "atencion" && (
-
-              <>
-
-                <div className="service-detail-icon">
-                  ◷
-                </div>
-
-                <div className="service-detail-content">
-
-                  <span>
-                    03 · ATENCIÓN DIGITAL
-                  </span>
-
-                  <h3>
-                    Un sistema pensado para cualquier dispositivo
-                  </h3>
-
-                  <p>
-                    La plataforma está diseñada para
-                    facilitar la consulta desde
-                    computadoras, tablets y celulares,
-                    con una presentación clara y adaptada
-                    a diferentes tamaños de pantalla.
-                  </p>
-
-                  <div className="service-points">
-
-                    <span>
-                      ✓ Computadora
-                    </span>
-
-                    <span>
-                      ✓ Tablet
-                    </span>
-
-                    <span>
-                      ✓ Celular
-                    </span>
-
-                    <span>
-                      ✓ Consulta en línea
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </>
-
-            )}
+          </div>
+
+          <div className="bottom-cards">
+
+            <button
+              type="button"
+              className={`bottom-card ${
+                servicioActivo === "consulta" ? "selected" : ""
+              }`}
+              onClick={() =>
+                setServicioActivo(
+                  servicioActivo === "consulta"
+                    ? null
+                    : "consulta"
+                )
+              }
+            >
+              <span className="bottom-card-number">01</span>
+              <span className="bottom-card-icon">⌕</span>
+
+              <strong>Consulta en línea</strong>
+
+              <p>
+                Realiza consultas de forma rápida y ordenada
+                desde cualquier dispositivo.
+              </p>
+
+              <span className="bottom-card-action">
+                {servicioActivo === "consulta"
+                  ? "OCULTAR"
+                  : "VER INFORMACIÓN"} →
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`bottom-card ${
+                servicioActivo === "informacion" ? "selected" : ""
+              }`}
+              onClick={() =>
+                setServicioActivo(
+                  servicioActivo === "informacion"
+                    ? null
+                    : "informacion"
+                )
+              }
+            >
+              <span className="bottom-card-number">02</span>
+              <span className="bottom-card-icon">✓</span>
+
+              <strong>Información disponible</strong>
+
+              <p>
+                Conoce qué datos pueden aparecer en el
+                resultado de una consulta.
+              </p>
+
+              <span className="bottom-card-action">
+                {servicioActivo === "informacion"
+                  ? "OCULTAR"
+                  : "VER INFORMACIÓN"} →
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`bottom-card ${
+                servicioActivo === "atencion" ? "selected" : ""
+              }`}
+              onClick={() =>
+                setServicioActivo(
+                  servicioActivo === "atencion"
+                    ? null
+                    : "atencion"
+                )
+              }
+            >
+              <span className="bottom-card-number">03</span>
+              <span className="bottom-card-icon">◷</span>
+
+              <strong>Atención digital</strong>
+
+              <p>
+                Consulta desde computadora, tablet o celular
+                de manera sencilla.
+              </p>
+
+              <span className="bottom-card-action">
+                {servicioActivo === "atencion"
+                  ? "OCULTAR"
+                  : "CÓMO FUNCIONA"} →
+              </span>
+            </button>
 
           </div>
 
-        )}
+          {servicioActivo && (
+            <div className="service-detail" aria-live="polite">
 
+              <div className="service-detail-icon">
+                {servicioActivo === "consulta"
+                  ? "⌕"
+                  : servicioActivo === "informacion"
+                  ? "✓"
+                  : "◷"}
+              </div>
+
+              <div className="service-detail-content">
+
+                {servicioActivo === "consulta" && (
+                  <>
+                    <span>01 · CONSULTA EN LÍNEA</span>
+                    <h3>Consulta rápida y sencilla</h3>
+
+                    <p>
+                      Selecciona el tipo de búsqueda, ingresa
+                      el dato solicitado y presiona Consultar.
+                      El sistema procesa la solicitud y muestra
+                      la información disponible para ese registro.
+                    </p>
+
+                    <div className="service-steps">
+                      <span><b>1</b> Selecciona</span>
+                      <span><b>2</b> Ingresa el dato</span>
+                      <span><b>3</b> Consulta</span>
+                      <span><b>4</b> Revisa el resultado</span>
+                    </div>
+
+                    <a href="#consulta" className="detail-button">
+                      IR A CONSULTA ↑
+                    </a>
+                  </>
+                )}
+
+                {servicioActivo === "informacion" && (
+                  <>
+                    <span>02 · INFORMACIÓN DISPONIBLE</span>
+                    <h3>Resultados claros y organizados</h3>
+
+                    <p>
+                      Dependiendo del registro consultado,
+                      el sistema puede mostrar información
+                      del titular, documento, tipo de registro,
+                      licencia, clase o categoría, fechas y estado.
+                    </p>
+
+                    <div className="service-points">
+                      <span>✓ Datos del titular</span>
+                      <span>✓ Documento registrado</span>
+                      <span>✓ Número de licencia</span>
+                      <span>✓ Fechas y estado</span>
+                    </div>
+                  </>
+                )}
+
+                {servicioActivo === "atencion" && (
+                  <>
+                    <span>03 · ATENCIÓN DIGITAL</span>
+                    <h3>
+                      Un sistema pensado para cualquier dispositivo
+                    </h3>
+
+                    <p>
+                      La plataforma está diseñada para facilitar
+                      la consulta desde computadoras, tablets y
+                      celulares, con una presentación clara y
+                      adaptada a diferentes tamaños de pantalla.
+                    </p>
+
+                    <div className="service-points">
+                      <span>✓ Computadora</span>
+                      <span>✓ Tablet</span>
+                      <span>✓ Celular</span>
+                      <span>✓ Consulta en línea</span>
+                    </div>
+                  </>
+                )}
+
+              </div>
+            </div>
+          )}
+
+        </div>
       </section>
 
+      {/* PIE DE PÁGINA */}
+      <footer className="site-footer" id="contacto">
+
+        <div className="footer-inner">
+
+          <a href="/" className="footer-brand">
+            <img
+              src="/escudo-cusco.png"
+              alt="Escudo de Cusco"
+            />
+
+            <span>
+              MUNICIPALIDAD PROVINCIAL
+              <strong>DEL CUSCO</strong>
+            </span>
+          </a>
+
+          <div className="footer-description">
+            Portal institucional de consultas y servicios digitales.
+          </div>
+
+          <div className="footer-bottom">
+            <span>PORTAL INSTITUCIONAL</span>
+            <span>PLATAFORMA DIGITAL</span>
+          </div>
+
+        </div>
+
+      </footer>
 
       <style jsx>{`
+
+        * {
+          box-sizing: border-box;
+        }
 
         .consulta-page {
           min-height: 100vh;
           background: #f5f2ee;
           color: #351717;
+          overflow: hidden;
         }
 
-        .hero {
-          display: grid;
-          grid-template-columns:
-            minmax(0, 1.15fr)
-            minmax(300px, 0.85fr);
+        /* BARRA SUPERIOR */
 
-          grid-template-areas:
-            "seal institution"
-            "title text";
-
-          align-items: center;
-
-          column-gap:
-            clamp(35px, 6vw, 90px);
-
-          row-gap: 18px;
-
-          background:
-            radial-gradient(
-              circle at 50% 0%,
-              rgba(255, 210, 100, 0.1),
-              transparent 35%
-            ),
-            linear-gradient(
-              135deg,
-              #741016,
-              #4f080d
-            );
-
-          color: white;
-
-          text-align: left;
-
-          padding:
-            42px
-            clamp(24px, 7vw, 90px)
-            105px;
+        .top-strip {
+          background: #f2e9e4;
+          border-bottom: 1px solid #e7dcd5;
         }
 
-        .seal,
-        .mini-seal {
+        .top-strip-inner {
+          width: min(1440px, 92%);
+          min-height: 39px;
+          margin: auto;
           display: flex;
           align-items: center;
-          justify-content: center;
-          border: 2px solid #d9ad4a;
-          background: rgba(255, 255, 255, 0.98);
-          border-radius: 50%;
-          overflow: hidden;
+          justify-content: space-between;
+          gap: 15px;
+          color: #86131b;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 2px;
+        }
+
+        .location-dot {
+          color: #c29b4a;
+          font-size: 9px;
+          margin-right: 9px;
+        }
+
+        .top-strip-right {
+          color: #98713b;
+        }
+
+        /* ENCABEZADO */
+
+        .site-header {
+          position: relative;
+          z-index: 20;
+          background: #fff;
+          border-bottom: 1px solid #eae4df;
+        }
+
+        .header-inner {
+          width: min(1440px, 92%);
+          min-height: 100px;
+          margin: auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 30px;
+        }
+
+        .brand {
+          display: flex;
+          align-items: center;
+          gap: 17px;
+          color: inherit;
+          text-decoration: none;
           flex-shrink: 0;
         }
 
-        .seal {
-          grid-area: seal;
-
-          width:
-            clamp(100px, 8vw, 124px);
-
-          height:
-            clamp(100px, 8vw, 124px);
-
-          margin: 0;
-
-          justify-self: start;
-
-          border-width: 3px;
-
-          box-shadow:
-            0 0 0 8px
-              rgba(217, 173, 74, 0.08),
-            0 14px 35px
-              rgba(0, 0, 0, 0.18);
+        .brand-seal {
+          width: 68px;
+          height: 68px;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          background: #fff;
+          overflow: hidden;
         }
 
-        .seal img,
-        .mini-seal img {
+        .brand-seal img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .brand-text {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .brand-text span {
+          color: #5c2223;
+          font-size: 13px;
+          letter-spacing: 1px;
+        }
+
+        .brand-text strong {
+          color: #941327;
+          font-size: 21px;
+          letter-spacing: 4px;
+        }
+
+        .navigation {
+          display: flex;
+          align-items: center;
+          gap: clamp(17px, 3vw, 43px);
+        }
+
+        .navigation a {
+          color: #392b29;
+          text-decoration: none;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 1.6px;
+          transition: color .2s ease;
+        }
+
+        .navigation a:hover {
+          color: #a20d29;
+        }
+
+        .menu-toggle {
+          display: none;
+          border: 0;
+          background: transparent;
+          color: #81121c;
+          font-size: 27px;
+          cursor: pointer;
+        }
+
+        /* HERO */
+
+        .hero {
+          position: relative;
+          color: white;
+          background:
+            radial-gradient(
+              circle at 72% 18%,
+              rgba(206, 163, 83, .17),
+              transparent 29%
+            ),
+            linear-gradient(
+              120deg,
+              #76121c 0%,
+              #570b13 53%,
+              #35080e 100%
+            );
+          overflow: hidden;
+        }
+
+        .hero-inner {
+          position: relative;
+          z-index: 2;
+          width: min(1240px, 90%);
+          margin: auto;
+          padding: 46px 0 22px;
+        }
+
+        .hero-decoration {
+          position: absolute;
+          border: 1px solid rgba(222, 184, 105, .15);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .hero-decoration-one {
+          width: 490px;
+          height: 490px;
+          right: -110px;
+          top: -210px;
+        }
+
+        .hero-decoration-two {
+          width: 350px;
+          height: 350px;
+          right: -40px;
+          top: -140px;
+        }
+
+        .hero-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          padding-bottom: 35px;
+          border-bottom: 1px solid rgba(222, 184, 105, .3);
+        }
+
+        .hero-seal {
+          width: 86px;
+          height: 86px;
+          display: grid;
+          place-items: center;
+          background: white;
+          border: 3px solid #d5ad5b;
+          border-radius: 50%;
+          overflow: hidden;
+          box-shadow: 0 0 0 7px rgba(213, 173, 91, .1);
+        }
+
+        .hero-seal img {
           width: 88%;
           height: 88%;
           object-fit: contain;
-          display: block;
         }
 
-        .institution {
-          grid-area: institution;
-
-          justify-self: end;
-
-          max-width: 480px;
-
-          color: #e5ba58;
-
-          font-size:
-            clamp(14px, 1.2vw, 18px);
-
-          font-weight: 900;
-
-          letter-spacing:
-            clamp(3px, 0.45vw, 6px);
-
-          line-height: 1.45;
-
-          text-align: right;
-
-          margin: 0;
-
-          text-transform: uppercase;
-        }
-
-        .hero h1 {
-          grid-area: title;
-
-          margin: 0;
-
-          font-family: Georgia, serif;
-
-          font-size:
-            clamp(42px, 6vw, 68px);
-
-          line-height: 1;
-        }
-
-        .hero-text {
-          grid-area: text;
-
-          max-width: 560px;
-
-          justify-self: end;
-
-          margin: 0;
-
-          line-height: 1.75;
-
-          font-size:
-            clamp(14px, 1.15vw, 17px);
-
-          color:
-            rgba(255, 255, 255, 0.9);
-
-          text-align: right;
-        }
-
-        .main-card {
-          width:
-            min(920px, calc(100% - 28px));
-
-          margin: -48px auto 0;
-
-          position: relative;
-
-          background: white;
-
-          border-radius: 18px;
-
-          padding: 34px;
-
-          box-shadow:
-            0 25px 60px
-              rgba(58, 30, 20, 0.12);
-        }
-
-        .heading {
+        .hero-institution {
           display: flex;
-          align-items: center;
-          gap: 16px;
+          flex-direction: column;
+          text-align: right;
+          gap: 9px;
         }
 
-        .search-icon {
-          width: 54px;
-          height: 54px;
-
-          display: grid;
-          place-items: center;
-
-          border-radius: 14px;
-
-          background: #f8eeea;
-
-          color: #870f17;
-
-          font-size: 27px;
-        }
-
-        .heading span,
-        .holder > span,
-        .result-brand span,
-        .bottom-section > span {
-          color: #b27b19;
-
-          font-size: 10px;
-
+        .hero-institution span {
+          color: #e7c77e;
+          font-size: 9px;
           font-weight: 900;
+          letter-spacing: 4px;
+        }
 
+        .hero-institution strong {
+          font-size: 17px;
+          line-height: 1.55;
           letter-spacing: 3px;
         }
 
-        .heading h2 {
-          margin: 3px 0 0;
+        .hero-content {
+          display: grid;
+          grid-template-columns: 1.2fr .8fr;
+          align-items: center;
+          gap: 80px;
+          padding: 55px 0 58px;
+        }
 
+        .eyebrow {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          color: #e7c77e;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 4px;
+        }
+
+        .eyebrow i {
+          width: 30px;
+          height: 1px;
+          background: #d7b25e;
+        }
+
+        .hero-title h1 {
+          margin: 23px 0 20px;
           font-family: Georgia, serif;
+          font-size: clamp(48px, 6vw, 78px);
+          font-weight: 500;
+          line-height: .98;
+          letter-spacing: -2px;
+        }
 
+        .hero-title h1 span {
+          color: #e8c77c;
+        }
+
+        .hero-title > p {
+          max-width: 590px;
+          color: rgba(255,255,255,.84);
+          font-size: 15px;
+          line-height: 1.85;
+        }
+
+        .hero-button {
+          display: inline-flex;
+          align-items: center;
+          gap: 30px;
+          margin-top: 20px;
+          padding: 15px 20px;
+          color: white;
+          border: 1px solid rgba(231,199,126,.7);
+          background: rgba(255,255,255,.06);
+          text-decoration: none;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 2px;
+          transition: .2s ease;
+        }
+
+        .hero-button:hover {
+          background: #d3ad60;
+          color: #481017;
+        }
+
+        .hero-button span {
+          font-size: 17px;
+        }
+
+        .hero-side {
+          position: relative;
+          min-height: 270px;
+          padding: 35px;
+          border: 1px solid rgba(225,190,117,.32);
+          background: rgba(31,4,9,.2);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .hero-side-line {
+          width: 45px;
+          height: 2px;
+          margin-bottom: 22px;
+          background: #d9b365;
+        }
+
+        .hero-side > span {
+          color: #e7c77e;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 3px;
+        }
+
+        .hero-side h2 {
+          position: relative;
+          z-index: 1;
+          margin: 14px 0;
+          font-family: Georgia, serif;
+          font-size: 32px;
+          font-weight: 500;
+          line-height: 1.15;
+        }
+
+        .hero-side p {
+          position: relative;
+          z-index: 1;
+          max-width: 300px;
+          margin: 0;
+          color: rgba(255,255,255,.75);
+          font-size: 12px;
+          line-height: 1.8;
+        }
+
+        .hero-side-seal {
+          position: absolute;
+          right: -30px;
+          bottom: -45px;
+          width: 180px;
+          height: 180px;
+          opacity: .08;
+        }
+
+        .hero-side-seal img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .hero-bottom {
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+          padding-top: 18px;
+          border-top: 1px solid rgba(222,184,105,.25);
+          color: #d9bb7a;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 2px;
+        }
+
+        /* TARJETA PRINCIPAL */
+
+        .main-card {
+          position: relative;
+          z-index: 5;
+          width: min(970px, calc(100% - 36px));
+          margin: -35px auto 0;
+          padding: 36px;
+          background: #fff;
+          border: 1px solid #eee5df;
+          border-radius: 4px;
+          box-shadow: 0 25px 65px rgba(52, 22, 16, .13);
+        }
+
+        .section-heading {
+          display: flex;
+          align-items: center;
+          gap: 17px;
+        }
+
+        .heading-icon {
+          width: 55px;
+          height: 55px;
+          display: grid;
+          place-items: center;
+          color: #8d1220;
+          background: #f8efea;
+          border: 1px solid #ead9ce;
           font-size: 30px;
         }
 
-        .intro {
-          color: #756b66;
-
-          margin: 22px 0;
-
-          font-size: 14px;
+        .section-kicker {
+          display: block;
+          color: #ae7e31;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 3px;
         }
+
+        .section-heading h2 {
+          margin: 5px 0 0;
+          color: #381919;
+          font-family: Georgia, serif;
+          font-size: 30px;
+          font-weight: 600;
+        }
+
+        .heading-decoration {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          margin-left: auto;
+        }
+
+        .heading-decoration span {
+          width: 5px;
+          height: 5px;
+          background: #d4b16b;
+          transform: rotate(45deg);
+        }
+
+        .intro {
+          margin: 24px 0;
+          color: #766b65;
+          font-size: 13px;
+          line-height: 1.7;
+        }
+
+        /* TIPOS DE CONSULTA */
 
         .type-grid {
           display: grid;
-
-          grid-template-columns:
-            repeat(4, 1fr);
-
-          gap: 10px;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
         }
 
         .type-card {
-          border: 1px solid #eadfd9;
-
-          background: #fffdfc;
-
-          border-radius: 12px;
-
-          padding: 17px 14px;
-
+          position: relative;
+          min-height: 105px;
+          padding: 16px;
           text-align: left;
-
+          color: #3d211c;
+          background: #fffdfb;
+          border: 1px solid #e9ded7;
+          border-radius: 3px;
           cursor: pointer;
-
-          transition: 0.2s;
-
-          color: #351717;
+          transition: .2s ease;
         }
 
         .type-card:hover {
+          border-color: #b58b4b;
           transform: translateY(-2px);
-
-          border-color: #b72029;
         }
 
         .type-card.active {
-          border-color: #b72029;
-
+          border: 1px solid #a10f25;
           background: #fff8f5;
-
-          box-shadow:
-            inset 0 0 0 1px #b72029;
+          box-shadow: inset 0 0 0 1px #a10f25;
         }
 
         .type-icon {
-          color: #900f17;
-
-          font-size: 18px;
-
-          margin-bottom: 11px;
+          margin-bottom: 12px;
+          color: #941326;
+          font-size: 20px;
         }
 
         .type-card strong {
           display: block;
-
-          font-size: 13px;
+          font-size: 12px;
+          line-height: 1.4;
         }
 
         .type-card small {
           display: block;
-
-          color: #9a8c86;
-
-          font-size: 10px;
-
           margin-top: 5px;
+          color: #9b8b82;
+          font-size: 10px;
         }
 
+        .type-selected {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          width: 17px;
+          height: 17px;
+          display: grid;
+          place-items: center;
+          color: white;
+          background: #941326;
+          border-radius: 50%;
+          font-size: 10px;
+        }
+
+        /* BUSCADOR */
+
         .search-box {
-          background: #faf7f4;
-
-          border: 1px solid #eadfd9;
-
-          border-radius: 14px;
-
-          padding: 20px;
-
           margin-top: 22px;
+          padding: 22px;
+          background: #faf7f4;
+          border: 1px solid #e8ddd6;
+          border-radius: 4px;
+        }
+
+        .search-box-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 13px;
+        }
+
+        .form-kicker {
+          display: block;
+          margin-bottom: 6px;
+          color: #b18a4a;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 2px;
         }
 
         .search-box label {
           display: block;
-
-          font-weight: 800;
-
+          color: #39201b;
           font-size: 13px;
+          font-weight: 900;
+        }
 
-          margin-bottom: 10px;
+        .form-number {
+          color: #a99b91;
+          font-size: 10px;
+          letter-spacing: 1px;
         }
 
         .search-row {
           display: grid;
-
-          grid-template-columns:
-            1fr 145px;
-
+          grid-template-columns: 1fr 155px;
           gap: 10px;
         }
 
         .input-wrap {
           display: flex;
-
           align-items: center;
-
-          gap: 10px;
-
+          gap: 12px;
+          min-width: 0;
+          padding: 0 15px;
           background: white;
-
-          border: 1px solid #dfd3ce;
-
-          border-radius: 10px;
-
-          padding: 0 14px;
+          border: 1px solid #ded2ca;
+          border-radius: 3px;
         }
 
         .input-wrap span {
-          color: #8b151c;
+          color: #941326;
+          font-size: 21px;
         }
 
         .input-wrap input {
           width: 100%;
-
-          border: 0;
-
-          outline: 0;
-
+          min-width: 0;
           padding: 15px 0;
-
+          color: #38201b;
           background: transparent;
+          border: 0;
+          outline: 0;
+          font-size: 13px;
+        }
 
-          font-size: 14px;
+        .input-wrap:focus-within {
+          border-color: #a10f25;
+          box-shadow: 0 0 0 3px rgba(161,15,37,.08);
         }
 
         .search-button {
-          border: 0;
-
-          border-radius: 10px;
-
-          background: #830f16;
-
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 13px;
+          padding: 14px;
           color: white;
-
+          background: #870f1b;
+          border: 1px solid #870f1b;
+          border-radius: 3px;
+          font-size: 12px;
           font-weight: 900;
-
           cursor: pointer;
+          transition: .2s ease;
+        }
 
-          box-shadow:
-            0 8px 18px
-              rgba(112, 10, 20, 0.18);
+        .search-button:hover:not(:disabled) {
+          background: #5e0a13;
         }
 
         .search-button:disabled {
-          opacity: 0.65;
-
+          opacity: .65;
           cursor: wait;
         }
 
-        .search-box > small {
-          display: block;
+        .search-button span {
+          font-size: 17px;
+        }
 
-          margin-top: 9px;
+        .loading-dot {
+          width: 13px;
+          height: 13px;
+          border: 2px solid rgba(255,255,255,.4);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin .7s linear infinite;
+        }
 
-          color: #998c86;
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
 
+        .input-help {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 11px;
+          color: #92847b;
           font-size: 10px;
         }
 
+        .input-help span {
+          color: #a47b38;
+        }
+
+        /* ERROR */
+
         .error-box {
           display: flex;
-
-          gap: 14px;
-
+          align-items: flex-start;
+          gap: 13px;
           margin-top: 20px;
-
-          padding: 18px;
-
-          border: 1px solid #efcccc;
-
-          background: #fff7f7;
-
-          border-radius: 12px;
-
+          padding: 17px;
           color: #7e1717;
+          background: #fff6f5;
+          border: 1px solid #edcfca;
         }
 
         .error-icon {
-          width: 28px;
-          height: 28px;
-
-          border-radius: 50%;
-
-          background: #b42020;
-
-          color: white;
-
+          width: 27px;
+          height: 27px;
+          flex-shrink: 0;
           display: grid;
-
           place-items: center;
-
+          color: white;
+          background: #b42020;
+          border-radius: 50%;
           font-weight: 900;
+        }
+
+        .error-box strong {
+          font-size: 12px;
         }
 
         .error-box p {
           margin: 5px 0 0;
-
           font-size: 12px;
         }
 
+        /* RESULTADO */
+
         .license-result {
           margin-top: 24px;
-
-          border: 1px solid #e5d8d2;
-
-          border-radius: 17px;
-
           overflow: hidden;
-
-          box-shadow:
-            0 15px 35px
-              rgba(65, 31, 20, 0.08);
+          background: white;
+          border: 1px solid #e5d8d2;
+          box-shadow: 0 15px 35px rgba(65,31,20,.08);
         }
 
         .result-header {
-          background:
-            linear-gradient(
-              135deg,
-              #870f17,
-              #650a10
-            );
-
-          color: white;
-
-          padding: 22px 26px;
-
           display: flex;
-
           align-items: center;
-
           justify-content: space-between;
-
           gap: 20px;
+          padding: 22px 26px;
+          color: white;
+          background: linear-gradient(120deg,#870f17,#590a11);
         }
 
         .result-brand {
           display: flex;
-
           align-items: center;
-
           gap: 14px;
         }
 
         .mini-seal {
           width: 48px;
           height: 48px;
+          flex-shrink: 0;
+          display: grid;
+          place-items: center;
+          overflow: hidden;
+          background: white;
+          border: 2px solid #d5ad5b;
+          border-radius: 50%;
         }
 
         .mini-seal img {
-          width: 82%;
-          height: 82%;
+          width: 85%;
+          height: 85%;
+          object-fit: contain;
         }
 
         .result-brand span {
           color: #e8c36c;
-
           font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 2px;
         }
 
         .result-brand h3 {
-          margin: 4px 0 0;
-
+          margin: 5px 0 0;
           font-family: Georgia, serif;
-
-          font-size: 25px;
+          font-size: 24px;
         }
 
         .status {
-          border-radius: 30px;
-
-          padding: 9px 15px;
-
-          font-weight: 800;
-
-          font-size: 12px;
-
-          white-space: nowrap;
-
           display: inline-flex;
-
           align-items: center;
-
           gap: 7px;
+          padding: 9px 14px;
+          border-radius: 30px;
+          font-size: 12px;
+          font-weight: 800;
+          white-space: nowrap;
         }
 
         .status-valid {
-          border:
-            1px solid
-              rgba(86, 211, 116, 0.45);
-
-          background:
-            rgba(42, 145, 67, 0.2);
-
           color: #dfffe7;
+          background: rgba(42,145,67,.2);
+          border: 1px solid rgba(86,211,116,.45);
         }
 
         .status-invalid {
-          border:
-            1px solid
-              rgba(255, 126, 116, 0.5);
-
-          background:
-            rgba(190, 45, 38, 0.22);
-
           color: #ffe4e1;
+          background: rgba(190,45,38,.22);
+          border: 1px solid rgba(255,126,116,.5);
         }
 
         .status i,
         .result-footer strong i {
-          display: inline-grid;
-
-          place-items: center;
-
           width: 18px;
-
           height: 18px;
-
-          border-radius: 50%;
-
+          display: inline-grid;
+          place-items: center;
           margin: 0;
-
-          font-style: normal;
-
+          border-radius: 50%;
           font-size: 11px;
-
+          font-style: normal;
           font-weight: 900;
         }
-                .status-valid i,
+
+        .status-valid i,
         .footer-valid i {
-          background: #2e9d4d;
           color: white;
+          background: #2e9d4d;
         }
 
         .status-invalid i,
         .footer-invalid i {
-          background: #c9372c;
           color: white;
+          background: #c9372c;
         }
 
         .holder {
           padding: 23px 27px;
+          border-bottom: 1px solid #eee5e0;
+        }
 
-          border-bottom:
-            1px solid #eee5e0;
+        .holder > span {
+          color: #a77b37;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 2px;
         }
 
         .holder h4 {
           margin: 8px 0 0;
-
-          font-size: 24px;
-
-          letter-spacing: 0.5px;
+          font-size: 23px;
+          letter-spacing: .5px;
         }
 
         .holder p {
           margin: 4px 0 0;
-
-          font-size: 16px;
-
-          font-weight: 700;
-
           color: #5f4b45;
+          font-size: 15px;
+          font-weight: 700;
         }
 
         .data-grid {
           display: grid;
-
-          grid-template-columns:
-            repeat(2, 1fr);
+          grid-template-columns: repeat(2,1fr);
         }
 
         .data-item {
-          padding: 20px 27px;
-
-          border-bottom:
-            1px solid #eee5e0;
+          padding: 19px 27px;
+          border-bottom: 1px solid #eee5e0;
         }
 
         .data-item:nth-child(odd) {
-          border-right:
-            1px solid #eee5e0;
+          border-right: 1px solid #eee5e0;
         }
 
         .data-item span,
         .result-footer span {
           display: block;
-
-          color: #927f77;
-
-          font-size: 9px;
-
-          font-weight: 900;
-
-          letter-spacing: 1.5px;
-
           margin-bottom: 7px;
+          color: #927f77;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 1.5px;
         }
 
         .data-item strong {
-          font-size: 14px;
-
           color: #38221d;
+          font-size: 14px;
         }
 
         .result-footer {
-          padding: 17px 27px;
-
           display: flex;
-
-          justify-content: space-between;
-
           align-items: center;
-
+          justify-content: space-between;
+          gap: 15px;
+          padding: 17px 27px;
           background: #fbf9f7;
         }
 
         .result-footer strong {
           display: flex;
-
           align-items: center;
-
           gap: 7px;
-
           font-size: 13px;
         }
 
@@ -1658,57 +1744,42 @@ export default function ConsultaPage() {
 
         .consulted {
           color: #776b66;
-
           font-size: 11px;
         }
 
+        /* INFORMACIÓN */
+
         .info-box {
           display: flex;
-
+          align-items: flex-start;
           gap: 13px;
-
           margin-top: 22px;
-
           padding: 17px;
-
           background: #f7f4f1;
-
           border: 1px solid #e4dcd6;
-
-          border-radius: 12px;
         }
 
         .info-box.info-valid {
           background: #effaf2;
-
           border-color: #b9dfc2;
         }
 
         .info-box.info-invalid {
           background: #fff1f0;
-
           border-color: #efc1bc;
         }
 
         .info-icon {
           width: 30px;
           height: 30px;
-
           flex-shrink: 0;
-
           display: grid;
-
           place-items: center;
-
-          border-radius: 50%;
-
-          background: #8c7d74;
-
           color: white;
-
-          font-weight: 900;
-
+          background: #8c7d74;
+          border-radius: 50%;
           font-size: 13px;
+          font-weight: 900;
         }
 
         .info-valid .info-icon {
@@ -1732,272 +1803,168 @@ export default function ConsultaPage() {
         }
 
         .info-box p {
-          color: #6f655f;
-
-          font-size: 10px;
-
           margin: 5px 0 0;
-
-          line-height: 1.5;
+          color: #6f655f;
+          font-size: 10px;
+          line-height: 1.6;
         }
 
-        .info-box.info-valid p {
-          color: #3e7650;
-        }
-
-        .info-box.info-invalid p {
-          color: #8e514c;
-        }
-
-
-        /* =================================
-           SERVICIOS DIGITALES
-        ================================= */
+        /* SERVICIOS */
 
         .bottom-section {
+          margin-top: 75px;
+          padding: 75px 20px;
+          color: white;
+          background:
+            radial-gradient(
+              circle at 85% 10%,
+              rgba(193,148,69,.13),
+              transparent 30%
+            ),
+            #211a19;
+        }
+
+        .bottom-inner {
+          width: min(1120px,100%);
+          margin: auto;
+        }
+
+        .bottom-heading {
+          max-width: 650px;
+          margin: 0 auto 38px;
           text-align: center;
-
-          padding: 70px 20px;
-
-          background: #eee9e3;
-
-          margin-top: 70px;
         }
 
-        .bottom-section h2 {
+        .bottom-heading .section-kicker {
+          color: #e0bd76;
+        }
+
+        .bottom-heading h2 {
+          margin: 13px 0;
+          color: white;
           font-family: Georgia, serif;
-
-          font-size: 30px;
-
-          margin: 10px 0;
+          font-size: clamp(34px,5vw,52px);
+          font-weight: 500;
+          line-height: 1.12;
         }
 
-        .bottom-section > p {
-          color: #81756e;
+        .bottom-heading h2 span {
+          color: #dfbd79;
+        }
 
+        .bottom-heading p {
+          color: rgba(255,255,255,.65);
           font-size: 13px;
+          line-height: 1.8;
         }
-
 
         .bottom-cards {
-          width:
-            min(1000px, 100%);
-
-          margin: 30px auto 0;
-
           display: grid;
-
-          grid-template-columns:
-            repeat(3, 1fr);
-
-          gap: 16px;
-
-          text-align: left;
+          grid-template-columns: repeat(3,1fr);
+          gap: 17px;
         }
-
 
         .bottom-card {
           position: relative;
-
-          min-height: 255px;
-
+          min-height: 250px;
+          padding: 25px;
           overflow: hidden;
-
-          border:
-            1px solid #e4d9d2;
-
-          border-radius: 16px;
-
-          padding: 24px;
-
-          background: #ffffff;
-
           color: #351717;
-
           text-align: left;
-
+          background: #fff;
+          border: 1px solid #e5d8ce;
+          border-radius: 3px;
           cursor: pointer;
-
-          appearance: none;
-
-          font: inherit;
-
-          box-shadow:
-            0 8px 25px
-              rgba(65, 31, 20, 0.05);
-
-          transition:
-            transform .25s ease,
-            border-color .25s ease,
-            box-shadow .25s ease,
-            background .25s ease;
-        }
-
-        .bottom-card::before {
-          content: "";
-
-          position: absolute;
-
-          top: 0;
-          left: 0;
-
-          width: 100%;
-
-          height: 4px;
-
-          background: #8a1118;
-
-          transform: scaleX(0);
-
-          transform-origin: left;
-
-          transition:
-            transform .25s ease;
+          transition: .25s ease;
         }
 
         .bottom-card:hover,
         .bottom-card.selected {
           transform: translateY(-5px);
-
-          border-color: #c9a44f;
-
-          box-shadow:
-            0 18px 40px
-              rgba(65, 31, 20, 0.11);
-        }
-
-        .bottom-card:hover::before,
-        .bottom-card.selected::before {
-          transform: scaleX(1);
-        }
-
-        .bottom-card-icon {
-          display: grid;
-
-          place-items: center;
-
-          width: 42px;
-          height: 42px;
-
-          border-radius: 12px;
-
-          background: #f8eeea;
-
-          color: #8a1118;
-
-          font-size: 21px;
-
-          margin-bottom: 18px;
+          border-color: #d1ad64;
+          box-shadow: 0 15px 35px rgba(0,0,0,.18);
         }
 
         .bottom-card-number {
           position: absolute;
-
           top: 23px;
           right: 23px;
-
           color: #b9aaa2;
-
           font-size: 10px;
-
           font-weight: 900;
-
           letter-spacing: 2px;
+        }
+
+        .bottom-card-icon {
+          width: 43px;
+          height: 43px;
+          display: grid;
+          place-items: center;
+          margin-bottom: 20px;
+          color: #8a1118;
+          background: #f8eeea;
+          font-size: 22px;
         }
 
         .bottom-card strong {
           display: block;
-
-          color: #351717;
-
-          font-size: 16px;
-
           margin-bottom: 9px;
+          color: #351717;
+          font-size: 16px;
         }
 
         .bottom-card p {
+          min-height: 48px;
           margin: 0;
-
-          min-height: 52px;
-
           color: #81756e;
-
           font-size: 12px;
-
-          line-height: 1.65;
+          line-height: 1.7;
         }
 
         .bottom-card-action {
           display: block;
-
-          margin-top: 18px;
-
+          margin-top: 17px;
           color: #8a1118;
-
           font-size: 10px;
-
           font-weight: 900;
-
-          letter-spacing: 1.2px;
+          letter-spacing: 1px;
         }
 
-
-        /* =================================
-           INFORMACIÓN DESPLEGABLE
-        ================================= */
+        /* DETALLE DE SERVICIO */
 
         .service-detail {
-          width:
-            min(1000px, 100%);
-
-          margin: 20px auto 0;
-
-          padding: 27px;
-
           display: flex;
-
-          gap: 20px;
-
           align-items: flex-start;
-
+          gap: 20px;
+          margin-top: 20px;
+          padding: 27px;
+          color: #351717;
           text-align: left;
+          background: white;
+          border: 1px solid #ded2cb;
+          animation: detailIn .25s ease;
+        }
 
-          background: #ffffff;
-
-          border:
-            1px solid #ded2cb;
-
-          border-radius: 16px;
-
-          box-shadow:
-            0 12px 30px
-              rgba(65, 31, 20, 0.07);
-
-          animation:
-            serviceDetailIn .25s ease;
+        @keyframes detailIn {
+          from {
+            opacity: 0;
+            transform: translateY(-5px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .service-detail-icon {
           width: 48px;
           height: 48px;
-
           flex: 0 0 48px;
-
           display: grid;
-
           place-items: center;
-
-          border-radius: 13px;
-
+          color: white;
           background: #8a1118;
-
-          color: #ffffff;
-
           font-size: 22px;
-
-          box-shadow:
-            0 8px 18px
-              rgba(138, 17, 24, 0.18);
         }
 
         .service-detail-content {
@@ -2006,202 +1973,318 @@ export default function ConsultaPage() {
 
         .service-detail-content > span {
           color: #b27b19;
-
           font-size: 9px;
-
           font-weight: 900;
-
           letter-spacing: 2px;
         }
 
         .service-detail-content h3 {
-          margin: 5px 0 8px;
-
-          color: #351717;
-
+          margin: 6px 0 9px;
           font-family: Georgia, serif;
-
           font-size: 23px;
         }
 
         .service-detail-content p {
-          margin: 0;
-
-          color: #6f655f;
-
-          font-size: 13px;
-
-          line-height: 1.7;
-
           max-width: 760px;
+          margin: 0;
+          color: #6f655f;
+          font-size: 13px;
+          line-height: 1.7;
         }
 
         .service-steps,
         .service-points {
           display: flex;
-
           flex-wrap: wrap;
-
           gap: 9px;
-
           margin-top: 17px;
         }
 
         .service-steps span,
         .service-points span {
           display: inline-flex;
-
           align-items: center;
-
           gap: 7px;
-
           padding: 9px 11px;
-
-          border-radius: 9px;
-
-          background: #faf7f4;
-
-          border:
-            1px solid #e7ddd7;
-
           color: #594944;
-
+          background: #faf7f4;
+          border: 1px solid #e7ddd7;
           font-size: 10px;
-
           font-weight: 700;
         }
 
         .service-steps b {
-          display: grid;
-
-          place-items: center;
-
           width: 18px;
           height: 18px;
-
-          border-radius: 50%;
-
-          background: #8a1118;
-
+          display: grid;
+          place-items: center;
           color: white;
-
+          background: #8a1118;
+          border-radius: 50%;
           font-size: 9px;
         }
 
         .detail-button {
+          display: inline-block;
           margin-top: 18px;
-
           padding: 11px 16px;
-
-          border: 0;
-
-          border-radius: 8px;
-
-          background: #8a1118;
-
           color: white;
-
+          background: #8a1118;
+          text-decoration: none;
           font-size: 10px;
-
           font-weight: 900;
-
           letter-spacing: 1px;
-
-          cursor: pointer;
         }
 
-        @keyframes serviceDetailIn {
+        /* PIE DE PÁGINA */
 
-          from {
-            opacity: 0;
+        .site-footer {
+          color: white;
+          background: #160f10;
+        }
 
-            transform:
-              translateY(-5px);
+        .footer-inner {
+          width: min(1120px,90%);
+          margin: auto;
+          padding: 35px 0 20px;
+        }
+
+        .footer-brand {
+          display: inline-flex;
+          align-items: center;
+          gap: 13px;
+          color: white;
+          text-decoration: none;
+          font-size: 10px;
+          letter-spacing: 1px;
+          line-height: 1.7;
+        }
+
+        .footer-brand img {
+          width: 46px;
+          height: 46px;
+          object-fit: contain;
+          padding: 3px;
+          background: white;
+          border-radius: 50%;
+        }
+
+        .footer-brand span {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .footer-brand strong {
+          color: #e2bd72;
+          font-size: 14px;
+          letter-spacing: 2px;
+        }
+
+        .footer-description {
+          margin-top: 18px;
+          color: rgba(255,255,255,.55);
+          font-size: 11px;
+        }
+
+        .footer-bottom {
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+          margin-top: 25px;
+          padding-top: 16px;
+          border-top: 1px solid rgba(255,255,255,.12);
+          color: #c4a66c;
+          font-size: 9px;
+          letter-spacing: 2px;
+        }
+
+        /* TABLETS */
+
+        @media (max-width: 900px) {
+
+          .header-inner {
+            min-height: 85px;
           }
 
-          to {
-            opacity: 1;
+          .brand-seal {
+            width: 58px;
+            height: 58px;
+          }
 
-            transform:
-              translateY(0);
+          .navigation {
+            gap: 17px;
+          }
+
+          .navigation a {
+            font-size: 9px;
+            letter-spacing: 1px;
+          }
+
+          .hero-content {
+            gap: 30px;
+          }
+
+          .hero-side {
+            padding: 25px;
           }
 
         }
 
+        /* MÓVILES */
 
-        @media (max-width: 850px) {
+        @media (max-width: 700px) {
 
-          .hero {
+          .top-strip-inner {
+            min-height: 34px;
+            font-size: 8px;
+            letter-spacing: 1px;
+          }
+
+          .top-strip-right {
+            display: none;
+          }
+
+          .header-inner {
+            min-height: 78px;
+          }
+
+          .brand {
+            gap: 10px;
+          }
+
+          .brand-seal {
+            width: 49px;
+            height: 49px;
+          }
+
+          .brand-text span {
+            font-size: 9px;
+          }
+
+          .brand-text strong {
+            font-size: 16px;
+            letter-spacing: 2px;
+          }
+
+          .menu-toggle {
+            display: block;
+          }
+
+          .navigation {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            display: none;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+            padding: 8px 5%;
+            background: white;
+            border-top: 1px solid #eee5df;
+            box-shadow: 0 12px 20px rgba(0,0,0,.08);
+          }
+
+          .navigation.open {
+            display: flex;
+          }
+
+          .navigation a {
+            padding: 15px 5px;
+            border-bottom: 1px solid #f0e9e4;
+            font-size: 11px;
+          }
+
+          .hero-inner {
+            width: 90%;
+            padding-top: 30px;
+          }
+
+          .hero-top {
+            padding-bottom: 25px;
+          }
+
+          .hero-seal {
+            width: 65px;
+            height: 65px;
+          }
+
+          .hero-institution span {
+            font-size: 7px;
+            letter-spacing: 2px;
+          }
+
+          .hero-institution strong {
+            font-size: 11px;
+            letter-spacing: 1.5px;
+          }
+
+          .hero-content {
             grid-template-columns: 1fr;
-
-            grid-template-areas:
-              "seal"
-              "institution"
-              "title"
-              "text";
-
-            justify-items: center;
-
-            text-align: center;
-
-            padding:
-              34px 22px 85px;
-
-            row-gap: 14px;
+            gap: 28px;
+            padding: 38px 0;
           }
 
-          .seal {
-            width: 96px;
-
-            height: 96px;
-
-            justify-self: center;
-
-            margin: 0 auto 4px;
+          .hero-title h1 {
+            font-size: clamp(46px,12vw,62px);
           }
 
-          .institution {
-            justify-self: center;
-
-            max-width: 650px;
-
-            text-align: center;
-
+          .hero-title > p {
             font-size: 13px;
-
-            letter-spacing: 3px;
-
-            line-height: 1.5;
           }
 
-          .hero h1 {
-            text-align: center;
-
-            font-size:
-              clamp(38px, 9vw, 52px);
-
-            line-height: 1.05;
+          .hero-side {
+            min-height: 205px;
           }
 
-          .hero-text {
-            justify-self: center;
+          .hero-side h2 {
+            font-size: 27px;
+          }
 
-            max-width: 620px;
-
-            text-align: center;
-
-            font-size: 14px;
-
-            line-height: 1.65;
+          .hero-bottom {
+            font-size: 7px;
+            letter-spacing: 1px;
           }
 
           .main-card {
-            padding: 20px;
+            width: calc(100% - 22px);
+            margin-top: -18px;
+            padding: 21px 16px;
+          }
+
+          .section-heading h2 {
+            font-size: 24px;
+          }
+
+          .heading-icon {
+            width: 46px;
+            height: 46px;
+          }
+
+          .heading-decoration {
+            display: none;
+          }
+
+          .intro {
+            font-size: 12px;
           }
 
           .type-grid {
-            grid-template-columns:
-              repeat(2, 1fr);
+            grid-template-columns: repeat(2,minmax(0,1fr));
+            gap: 9px;
+          }
+
+          .type-card {
+            min-height: 100px;
+            padding: 12px;
+          }
+
+          .type-card strong {
+            font-size: 11px;
+          }
+
+          .search-box {
+            padding: 15px;
           }
 
           .search-row {
@@ -2209,29 +2292,48 @@ export default function ConsultaPage() {
           }
 
           .search-button {
-            min-height: 48px;
+            min-height: 47px;
+          }
+
+          .result-header {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 18px;
+          }
+
+          .result-brand h3 {
+            font-size: 20px;
+          }
+
+          .holder {
+            padding: 20px;
           }
 
           .data-grid {
             grid-template-columns: 1fr;
           }
 
+          .data-item {
+            padding: 15px 20px;
+          }
+
           .data-item:nth-child(odd) {
             border-right: 0;
           }
 
-          .result-header {
-            align-items: flex-start;
-
-            flex-direction: column;
-          }
-
           .result-footer {
             align-items: flex-start;
-
             flex-direction: column;
+            padding: 17px 20px;
+          }
 
-            gap: 12px;
+          .bottom-section {
+            margin-top: 45px;
+            padding: 55px 17px;
+          }
+
+          .bottom-heading h2 {
+            font-size: 37px;
           }
 
           .bottom-cards {
@@ -2239,56 +2341,41 @@ export default function ConsultaPage() {
           }
 
           .bottom-card {
-            min-height: 225px;
+            min-height: 220px;
           }
 
           .service-detail {
             flex-direction: column;
+            padding: 20px;
+          }
 
-            padding: 22px;
+          .footer-bottom {
+            font-size: 7px;
+            letter-spacing: 1px;
           }
 
         }
 
+        @media (max-width: 380px) {
 
-        @media (max-width: 480px) {
-
-          .hero {
-            padding:
-              28px 18px 75px;
-
-            row-gap: 12px;
+          .brand-text span {
+            font-size: 8px;
           }
 
-          .seal {
-            width: 86px;
-
-            height: 86px;
+          .brand-text strong {
+            font-size: 14px;
           }
 
-          .institution {
-            font-size: 11px;
-
-            letter-spacing: 2.2px;
+          .hero-institution strong {
+            font-size: 9px;
           }
 
-          .hero h1 {
-            font-size: 38px;
+          .hero-title h1 {
+            font-size: 43px;
           }
 
-          .hero-text {
-            font-size: 13px;
-          }
-
-          .main-card {
-            width:
-              calc(100% - 18px);
-
-            padding: 16px;
-          }
-
-          .type-grid {
-            grid-template-columns: 1fr;
+          .type-card {
+            padding: 10px;
           }
 
         }
